@@ -1,0 +1,238 @@
+<!DOCTYPE html><html class="light" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+<title>Reports - Arun Crackers</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&amp;family=Work+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed-variant": "#3a485b",
+                        "secondary-fixed-dim": "#b9c7df",
+                        "inverse-on-surface": "#eff1f3",
+                        "on-error": "#ffffff",
+                        "primary-container": "#dc2c4f",
+                        "background": "#f7f9fb",
+                        "on-surface": "#191c1e",
+                        "outline": "#cbd5e1",
+                        "outline-variant": "#e3bdbf",
+                        "secondary-fixed": "#d5e3fc",
+                        "primary-fixed-dim": "#ffb2b7",
+                        "tertiary-container": "#00855b",
+                        "on-primary-container": "#fffbff",
+                        "surface-container-high": "#e6e8ea",
+                        "on-tertiary": "#ffffff",
+                        "surface-variant": "#e0e3e5",
+                        "secondary": "#515f74",
+                        "surface-tint": "#bc0b3b",
+                        "on-surface-variant": "#64748b",
+                        "on-primary-fixed": "#40000d",
+                        "surface-container": "#eceef0",
+                        "surface-container-low": "#f2f4f6",
+                        "on-secondary-container": "#57657a",
+                        "surface-dim": "#d8dadc",
+                        "primary-fixed": "#ffdadb",
+                        "tertiary-fixed": "#6ffbbe",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-tertiary-container": "#f5fff6",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "on-primary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "primary": "#b90538",
+                        "secondary-container": "#d5e3fc",
+                        "on-primary-fixed-variant": "#92002a",
+                        "inverse-primary": "#ffb2b7",
+                        "surface-bright": "#f7f9fb",
+                        "on-secondary-fixed": "#0d1c2e",
+                        "error": "#ef4444",
+                        "on-tertiary-fixed": "#002113",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "tertiary": "#006947",
+                        "surface": "#ffffff",
+                        "on-background": "#191c1e",
+                        "inverse-surface": "#2d3133",
+                        "error-container": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "gutter": "8px",
+                        "touch-target-min": "44px",
+                        "margin-mobile": "12px",
+                        "stack-md": "12px",
+                        "unit": "4px",
+                        "stack-lg": "20px",
+                        "stack-sm": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Work Sans"],
+                        "headline-sm": ["Work Sans"],
+                        "data-sm": ["JetBrains Mono"],
+                        "data-md": ["JetBrains Mono"],
+                        "body-md": ["Work Sans"],
+                        "body-sm": ["Work Sans"],
+                        "label-caps": ["Work Sans"],
+                        "headline-lg": ["Work Sans"],
+                        "data-lg": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["18px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "headline-sm": ["16px", { "lineHeight": "22px", "fontWeight": "600" }],
+                        "data-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "data-md": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "label-caps": ["11px", { "lineHeight": "14px", "letterSpacing": "0.08em", "fontWeight": "600" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "data-lg": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.02em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-surface-container-low text-on-surface font-body-md antialiased pb-20">
+<!-- TopAppBar Shared Component -->
+<header class="bg-surface dark:bg-on-surface w-full top-0 sticky border-b border-outline-variant dark:border-on-secondary-fixed-variant flex items-center px-margin-mobile h-touch-target-min z-40">
+
+<h1 class="font-headline-sm text-headline-sm text-primary dark:text-inverse-primary flex-1">Arun Crackers</h1>
+</header>
+<!-- Main Content -->
+<main class="w-full">
+<!-- Summary Cards (High-end Bento Grid approach) -->
+<div class="p-margin-mobile grid grid-cols-2 gap-unit">
+<div class="bg-surface rounded-lg p-stack-md border border-outline-variant flex flex-col justify-between h-24">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Total Sales</span>
+<span class="font-data-lg text-data-lg text-on-surface">₹45,230</span>
+</div>
+<div class="bg-surface rounded-lg p-stack-md border border-outline-variant flex flex-col justify-between h-24">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Total Bills</span>
+<span class="font-data-lg text-data-lg text-on-surface">142</span>
+</div>
+</div>
+<!-- Filter Chips (High-density) -->
+<div class="px-margin-mobile pb-stack-sm flex overflow-x-auto no-scrollbar gap-unit whitespace-nowrap">
+<button class="h-touch-target-min px-stack-md rounded-full font-label-caps text-label-caps bg-primary text-on-primary border border-primary transition-colors flex items-center justify-center">Today</button>
+<button class="h-touch-target-min px-stack-md rounded-full font-label-caps text-label-caps bg-surface text-on-surface-variant border border-outline-variant transition-colors flex items-center justify-center">Yesterday</button>
+<button class="h-touch-target-min px-stack-md rounded-full font-label-caps text-label-caps bg-surface text-on-surface-variant border border-outline-variant transition-colors flex items-center justify-center">Last 7 Days</button>
+<button class="h-touch-target-min px-stack-md rounded-full font-label-caps text-label-caps bg-surface text-on-surface-variant border border-outline-variant transition-colors flex items-center justify-center">Custom date</button>
+</div>
+<!-- Reports List -->
+<div class="flex flex-col gap-unit px-margin-mobile mt-unit pb-margin-mobile">
+<!-- Row 1 -->
+<div class="bg-surface border border-outline-variant rounded-lg p-stack-md flex items-center justify-between min-h-[48px] active:bg-surface-container transition-colors">
+<div class="flex flex-col">
+<span class="font-data-md text-data-md text-on-surface">#BL-4092</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">14:32 • 5 Items</span>
+</div>
+<div class="flex items-center gap-stack-md">
+<span class="font-data-md text-data-md text-on-surface">₹1,250</span>
+<button aria-label="Export PDF" class="text-primary p-unit -mr-unit rounded-full active:bg-primary-container/20 transition-colors">
+<span class="material-symbols-outlined" data-icon="picture_as_pdf">picture_as_pdf</span>
+</button>
+<button aria-label="Delete Bill" class="text-error p-unit -mr-unit rounded-full active:bg-error-container transition-colors flex items-center justify-center">
+  <span class="material-symbols-outlined" data-icon="delete">delete</span>
+</button></div>
+</div>
+<!-- Row 2 -->
+<div class="bg-surface border border-outline-variant rounded-lg p-stack-md flex items-center justify-between min-h-[48px] active:bg-surface-container transition-colors">
+<div class="flex flex-col">
+<span class="font-data-md text-data-md text-on-surface">#BL-4091</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">14:15 • 12 Items</span>
+</div>
+<div class="flex items-center gap-stack-md">
+<span class="font-data-md text-data-md text-on-surface">₹4,890</span>
+<button aria-label="Export PDF" class="text-primary p-unit -mr-unit rounded-full active:bg-primary-container/20 transition-colors">
+<span class="material-symbols-outlined" data-icon="picture_as_pdf">picture_as_pdf</span>
+</button>
+<button aria-label="Delete Bill" class="text-error p-unit -mr-unit rounded-full active:bg-error-container transition-colors flex items-center justify-center">
+  <span class="material-symbols-outlined" data-icon="delete">delete</span>
+</button></div>
+</div>
+<!-- Row 3 -->
+<div class="bg-surface border border-outline-variant rounded-lg p-stack-md flex items-center justify-between min-h-[48px] active:bg-surface-container transition-colors">
+<div class="flex flex-col">
+<span class="font-data-md text-data-md text-on-surface">#BL-4090</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">13:50 • 2 Items</span>
+</div>
+<div class="flex items-center gap-stack-md">
+<span class="font-data-md text-data-md text-on-surface">₹450</span>
+<button aria-label="Export PDF" class="text-primary p-unit -mr-unit rounded-full active:bg-primary-container/20 transition-colors">
+<span class="material-symbols-outlined" data-icon="picture_as_pdf">picture_as_pdf</span>
+</button>
+<button aria-label="Delete Bill" class="text-error p-unit -mr-unit rounded-full active:bg-error-container transition-colors flex items-center justify-center">
+  <span class="material-symbols-outlined" data-icon="delete">delete</span>
+</button></div>
+</div>
+<!-- Row 4 -->
+<div class="bg-surface border border-outline-variant rounded-lg p-stack-md flex items-center justify-between min-h-[48px] active:bg-surface-container transition-colors">
+<div class="flex flex-col">
+<span class="font-data-md text-data-md text-on-surface">#BL-4089</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">13:12 • 8 Items</span>
+</div>
+<div class="flex items-center gap-stack-md">
+<span class="font-data-md text-data-md text-on-surface">₹3,200</span>
+<button aria-label="Export PDF" class="text-primary p-unit -mr-unit rounded-full active:bg-primary-container/20 transition-colors">
+<span class="material-symbols-outlined" data-icon="picture_as_pdf">picture_as_pdf</span>
+</button>
+<button aria-label="Delete Bill" class="text-error p-unit -mr-unit rounded-full active:bg-error-container transition-colors flex items-center justify-center">
+  <span class="material-symbols-outlined" data-icon="delete">delete</span>
+</button></div>
+</div>
+<!-- Row 5 -->
+<div class="bg-surface border border-outline-variant rounded-lg p-stack-md flex items-center justify-between min-h-[48px] active:bg-surface-container transition-colors">
+<div class="flex flex-col">
+<span class="font-data-md text-data-md text-on-surface">#BL-4088</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">12:45 • 1 Item</span>
+</div>
+<div class="flex items-center gap-stack-md">
+<span class="font-data-md text-data-md text-on-surface">₹150</span>
+<button aria-label="Export PDF" class="text-primary p-unit -mr-unit rounded-full active:bg-primary-container/20 transition-colors">
+<span class="material-symbols-outlined" data-icon="picture_as_pdf">picture_as_pdf</span>
+</button>
+<button aria-label="Delete Bill" class="text-error p-unit -mr-unit rounded-full active:bg-error-container transition-colors flex items-center justify-center">
+  <span class="material-symbols-outlined" data-icon="delete">delete</span>
+</button></div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar Shared Component -->
+<nav class="bg-surface dark:bg-on-surface fixed bottom-0 w-full z-50 shadow-md border-t border-outline-variant dark:border-on-secondary-fixed-variant flex justify-around items-center h-16 px-margin-mobile pb-env-safe">
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-on-secondary-fixed-variant scale-95 active:scale-90 transition-transform h-full w-20">
+<span aria-hidden="true" class="material-symbols-outlined mb-1" data-icon="receipt_long">receipt_long</span>
+<span class="font-label-caps text-label-caps">Billing</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-on-secondary-fixed-variant scale-95 active:scale-90 transition-transform h-full w-20">
+<span aria-hidden="true" class="material-symbols-outlined mb-1" data-icon="inventory_2">inventory_2</span>
+<span class="font-label-caps text-label-caps">Inventory</span>
+</button>
+<button aria-current="page" class="flex flex-col items-center justify-center bg-primary-container dark:bg-primary-container text-on-primary-container rounded-full px-spacing-stack-lg py-1 hover:bg-surface-container-high dark:hover:bg-on-secondary-fixed-variant scale-95 active:scale-90 transition-transform h-full w-20">
+<span aria-hidden="true" class="material-symbols-outlined mb-1" data-icon="assessment">assessment</span>
+<span class="font-label-caps text-label-caps">Reports</span>
+</button>
+</nav>
+
+
+</body></html>
