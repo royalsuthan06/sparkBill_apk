@@ -87,6 +87,27 @@ class _InventoryViewState extends State<InventoryView> {
       return matchesSearch && matchesCategory && matchesPrice;
     }).toList();
 
+    if (_searchQuery.isNotEmpty) {
+      final q = _searchQuery.toLowerCase();
+      filteredProducts.sort((a, b) {
+        final aSku = a.sku.toLowerCase();
+        final bSku = b.sku.toLowerCase();
+        final aName = a.name.toLowerCase();
+        final bName = b.name.toLowerCase();
+
+        if (aSku == q && bSku != q) return -1;
+        if (bSku == q && aSku != q) return 1;
+        if (aSku.startsWith(q) && !bSku.startsWith(q)) return -1;
+        if (bSku.startsWith(q) && !aSku.startsWith(q)) return 1;
+        if (aSku.contains(q) && !bSku.contains(q)) return -1;
+        if (bSku.contains(q) && !aSku.contains(q)) return 1;
+        if (aName.startsWith(q) && !bName.startsWith(q)) return -1;
+        if (bName.startsWith(q) && !aName.startsWith(q)) return 1;
+
+        return 0;
+      });
+    }
+
     if (_priceSort == 'low_to_high') {
       filteredProducts.sort((a, b) => a.price.compareTo(b.price));
     } else if (_priceSort == 'high_to_low') {
