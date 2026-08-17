@@ -6,6 +6,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../models/bill.dart';
+import '../utils/money.dart';
 
 class InvoiceDialog extends StatefulWidget {
   final Bill bill;
@@ -306,7 +307,7 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                                 Expanded(
                                   flex: 30,
                                   child: Text(
-                                    'INR ${item.price.toStringAsFixed(2)}',
+                                    'INR ${formatRupees(item.pricePaise)}',
                                     style: GoogleFonts.jetBrainsMono(
                                       fontSize: 9.5,
                                       color: const Color(0xFF0F172A),
@@ -329,7 +330,7 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                                 Expanded(
                                   flex: 35,
                                   child: Text(
-                                    'INR ${item.total.toStringAsFixed(2)}',
+                                    'INR ${formatRupees(item.total)}',
                                     style: GoogleFonts.jetBrainsMono(
                                       fontSize: 9.5,
                                       fontWeight: FontWeight.bold,
@@ -360,7 +361,7 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                               ),
                             ),
                             Text(
-                              'INR ${widget.bill.grandTotal.toStringAsFixed(2)}',
+                              'INR ${formatRupees(widget.bill.grandTotalPaise)}',
                               style: GoogleFonts.jetBrainsMono(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
@@ -386,7 +387,7 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                               ),
                             ),
                             Text(
-                              'INR ${widget.bill.grandTotal.toStringAsFixed(2)}',
+                              'INR ${formatRupees(widget.bill.grandTotalPaise)}',
                               style: GoogleFonts.jetBrainsMono(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w800,
@@ -650,9 +651,9 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                         children: [
                           _pdfTableCell((index + 1).toString(), align: pw.TextAlign.center),
                           _pdfTableCell(item.product.name, align: pw.TextAlign.left),
-                          _pdfTableCell('INR ${item.price.toStringAsFixed(2)}', align: pw.TextAlign.right),
+                          _pdfTableCell('INR ${(item.pricePaise / 100.0).toStringAsFixed(2)}', align: pw.TextAlign.right),
                           _pdfTableCell(item.quantity.toString(), align: pw.TextAlign.center),
-                          _pdfTableCell('INR ${item.total.toStringAsFixed(2)}', align: pw.TextAlign.right),
+                          _pdfTableCell('INR ${(item.total / 100.0).toStringAsFixed(2)}', align: pw.TextAlign.right),
                         ],
                       );
                     }),
@@ -669,7 +670,7 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                       style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10, color: PdfColors.grey700),
                     ),
                     pw.Text(
-                      'INR ${bill.grandTotal.toStringAsFixed(2)}',
+                      'INR ${formatRupees(bill.grandTotalPaise)}',
                       style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
                     ),
                   ],
@@ -687,7 +688,7 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                       style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13),
                     ),
                     pw.Text(
-                      'INR ${bill.grandTotal.toStringAsFixed(2)}',
+                      'INR ${formatRupees(bill.grandTotalPaise)}',
                       style: pw.TextStyle(
                         fontWeight: pw.FontWeight.bold,
                         fontSize: 14,

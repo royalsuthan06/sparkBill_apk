@@ -8,7 +8,7 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
     ChangeNotifierProvider(
-      create: (_) => POSProvider(),
+      create: (_) => POSProvider()..initialize(),
       child: const SparkBillPOSApp(),
     ),
   );

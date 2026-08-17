@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../providers/pos_provider.dart';
 import '../models/bill.dart';
+import '../utils/money.dart';
 import '../widgets/invoice_dialog.dart';
 
 class ReportsView extends StatefulWidget {
@@ -57,7 +58,6 @@ class _ReportsViewState extends State<ReportsView> {
   @override
   Widget build(BuildContext context) {
     final posProvider = context.watch<POSProvider>();
-    final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
     final timeFormat = DateFormat('HH:mm');
 
     // Filter bills based on date selection
@@ -83,7 +83,7 @@ class _ReportsViewState extends State<ReportsView> {
     }).toList();
 
     // Calculations for Summary Cards
-    final double totalSalesSum = filteredBills.fold(0.0, (sum, bill) => sum + bill.grandTotal);
+    final int totalSalesSum = filteredBills.fold(0, (sum, bill) => sum + bill.grandTotalPaise);
     final int totalBillsCount = filteredBills.length;
 
     return Scaffold(
@@ -134,7 +134,7 @@ class _ReportsViewState extends State<ReportsView> {
                           ),
                         ),
                         Text(
-                          currencyFormat.format(totalSalesSum),
+                          formatMoney(totalSalesSum, decimals: 0),
                           style: GoogleFonts.jetBrainsMono(
                             fontSize: 20,
                             fontWeight: FontWeight.w600,
@@ -301,7 +301,7 @@ class _ReportsViewState extends State<ReportsView> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  '₹${bill.grandTotal.toStringAsFixed(0)}',
+                                  formatMoney(bill.grandTotalPaise, decimals: 0),
                                   style: GoogleFonts.jetBrainsMono(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
@@ -353,7 +353,7 @@ class _ReportsViewState extends State<ReportsView> {
         return AlertDialog(
           title: Text('Void Sales Bill', style: GoogleFonts.workSans(fontWeight: FontWeight.bold)),
           content: Text(
-            'Are you sure you want to delete and void transaction #${bill.id} for ₹${bill.grandTotal.toStringAsFixed(0)}?',
+            'Are you sure you want to delete and void transaction #${bill.id} for ₹${formatRupees(bill.grandTotalPaise, decimals: 0)}?',
             style: GoogleFonts.workSans(),
           ),
           actions: [

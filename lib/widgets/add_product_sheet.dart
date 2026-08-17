@@ -227,7 +227,7 @@ class _AddProductSheetState extends State<AddProductSheet> {
         sku: _skuController.text.trim().toUpperCase(),
         name: _nameController.text.trim(),
         category: _selectedCategory,
-        price: double.parse(_priceController.text.trim()),
+        pricePaise: (double.parse(_priceController.text.trim()) * 100).round(),
       );
 
       // Add to inventory

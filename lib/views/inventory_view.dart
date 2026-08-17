@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/pos_provider.dart';
 import '../models/product.dart';
+import '../utils/money.dart';
 import '../widgets/add_product_sheet.dart';
 
 class InventoryView extends StatefulWidget {
@@ -77,20 +78,20 @@ class _InventoryViewState extends State<InventoryView> {
       
       bool matchesPrice = true;
       if (_priceFilterRange == 'under_100') {
-        matchesPrice = p.price < 100;
+        matchesPrice = p.pricePaise < 10000;
       } else if (_priceFilterRange == '100_500') {
-        matchesPrice = p.price >= 100 && p.price <= 500;
+        matchesPrice = p.pricePaise >= 10000 && p.pricePaise <= 50000;
       } else if (_priceFilterRange == 'over_500') {
-        matchesPrice = p.price > 500;
+        matchesPrice = p.pricePaise > 50000;
       }
 
       return matchesSearch && matchesCategory && matchesPrice;
     }).toList();
 
     if (_priceSort == 'low_to_high') {
-      filteredProducts.sort((a, b) => a.price.compareTo(b.price));
+      filteredProducts.sort((a, b) => a.pricePaise.compareTo(b.pricePaise));
     } else if (_priceSort == 'high_to_low') {
-      filteredProducts.sort((a, b) => b.price.compareTo(a.price));
+      filteredProducts.sort((a, b) => b.pricePaise.compareTo(a.pricePaise));
     }
 
     return Scaffold(
@@ -396,7 +397,7 @@ class _InventoryViewState extends State<InventoryView> {
           Row(
             children: [
               Text(
-                '₹${product.price.toStringAsFixed(2)}',
+                formatMoney(product.pricePaise),
                 style: GoogleFonts.jetBrainsMono(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,

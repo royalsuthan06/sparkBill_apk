@@ -1,0 +1,377 @@
+# SparkBill — Master Engineering Documentation
+## Billing & Inventory Management System
+
+---
+
+## Document Metadata
+
+| Metadata Field | Value |
+| :--- | :--- |
+| **Document Title** | SparkBill Master Engineering Specification |
+| **Project Type** | Offline-First Cross-Platform Invoicing & Catalog Engine |
+| **Primary Platforms** | Android (Mobile) & Linux (Desktop) |
+| **Framework Version** | Flutter SDK 3.12.x / Dart SDK 3.x |
+| **State Management** | Change Note Provider |
+| **Local Persistence** | SQLite Engine (via `sqflite` & `sqflite_common_ffi`) |
+| **Lead Architect** | Senior Mobile & Systems Generalist |
+| **Verification Level** | High-Aesthetics UI, Direct POS Printing Emulator, Static Analysis |
+
+---
+
+## Revision History & Sign-Offs
+
+| Version | Date | Authors | Description of Changes | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **v1.0.0** | 2026-08-11 | Antigravity AI | Initial master specification; transitioned from POS terminology; removed discount models; implemented price sorting/filters & custom range date calendars. | **Approved** |
+
+---
+
+## Executive Summary & Business Objectives
+
+### Executive Summary
+SparkBill is a lightweight, offline-first Billing and Inventory Management System designed to operate in retail and manufacturing environments—specifically tailored to high-density seasonal sales like festival crackers (**Arun Crackers**). High dependency on third-party cloud infrastructure is eliminated by executing all transactions locally on mobile (Android) and desktop (Linux) hardware. 
+
+The software replaces complex, latency-heavy Point of Sale (POS) frameworks with a highly productive "Quick Billing" calculator, instant PDF generation, direct physical printer layouts, and an in-memory or SQLite database with offline category filters.
+
+### Scope & Solution Boundary
+- **Included**: In-app receipt render preview, high-contrast touch numbers, multi-column search indexing, custom range summaries, direct invoice printing via system printing pools, and locally scoped inventory updates.
+- **Excluded**: Remote cloud sync (Phase 2), online payment gateways, and multi-tenant ledger synchronization.
+
+### Acronyms & Definitions
+- **SKU**: Stock Keeping Unit (Unique item catalog index).
+- **FFI**: Foreign Function Interface (used for SQLite desktop linkage).
+- **DDL**: Data Definition Language (SQL schema creation scripts).
+- **M3**: Material Design 3 guidelines.
+
+---
+
+# SECTION 1: Product Requirements & Business Context
+
+## 1. Project Background & Business Goals
+### 1.1 Problem Statement
+Retailers in regional hubs (such as Sivakasi) require zero-latency invoice prints. Regular internet outages make online software unusable. Traditional desktop billing applications require expensive hardware and lack mobile responsiveness. A cross-platform mobile invoice system with native printing integration is necessary to speed up billing and catalog operations.
+
+### 1.2 User Personas
+1. **Billing Executive**: Focuses on rapid adding of items, verifying quantities, print-spool triggers, and cancelling/updating orders instantly with zero lag.
+2. **Store Manager / Administrator**: Manages the product inventory list, adds newly arrived custom items, and views sales reports (daily/weekly/custom ranges).
+
+### 1.3 Key Success Metrics (KPIs)
+- **App Launch Time**: < 1.8 seconds.
+- **Cart Operation Latency**: < 0.05 seconds (instantaneous feedback).
+- **Billing Confirmation to PDF Generation**: < 0.5 seconds.
+- **Data Availability**: 100% offline uptime.
+
+---
+
+## 2. Comprehensive Functional Requirements (FR)
+
+```mermaid
+graph TD
+    A[Billing Executive] -->|Input Metadata| B(Invoicing Engine)
+    A -->|Quick Search SKU| B
+    B -->|Generates Invoice| C{Print Engine}
+    C -->|Layout PDF| D[System Printer]
+    C -->|Simulate Text| E[Virtual Thermal Device]
+    F[Store Manager] -->|CRUD Products| G(Inventory Catalog)
+    F -->|Filters & Sorts| G
+    G -->|Updates| B
+```
+
+### 2.1 Module 1: Quick Billing & Invoicing Engine
+- **2.1.1 Customer Metadata Entry**: Allows input for *Mobile No.* and *Customer Name*, updating the reactive provider state in real time.
+- **2.1.2 Real-time Product Search & SKU Catalog Lookup**: Fuzzy match typing on names and SKUs. Displays an overlay widget with item category, unit price, and SKU details.
+- **2.1.3 Item Selection, Quantity Modifiers, & Order Summary**: Supports instant quantity stepping and input validation (e.g. quantity must be positive). Shows subtotal and grand total calculations.
+- **2.1.4 Invoice Generation & Sales Record Finalization**: Prompts confirmation prior to clear/discard operations and transaction voids. Opens an interactive printable receipt frame.
+
+### 2.2 Module 2: Product Catalog & Inventory Management
+- **2.2.1 Product CRUD**: Admin panel allows adding products dynamically, assigning unique SKUs, catalog categories, and prices.
+- **2.2.2 Category & Price Filtering**: Users can filter products by horizontally scrollable categories, sort prices (Low to High, High to Low), or narrow products down by price ranges (Under ₹100, ₹100-₹500, Over ₹500).
+- **2.2.3 Integrity Guard**: Prevents adding products with existing SKUs by overwriting catalog structures instead of duplicating them. Warns users before deleting items.
+
+### 2.3 Module 3: Invoice Engine & Native Printing
+- **2.3.1 Dynamic PDF Generation**: Draws custom layout parameters using native `pdf` widgets, inserting the business address and order details.
+- **2.3.2 Printer Integration**: Integrates directly with native systems (Windows/Linux CUPS, Android Print Spooler) using `Printing.layoutPdf()`.
+- **2.3.3 Reprinting & PDF Exporting**: Retains previous transaction logs allowing PDF reprints.
+
+### 2.4 Module 4: Sales Analytics & Reporting Dashboard
+- **2.4.1 Timeframe Analytics**: Organizes receipts by:
+  - *Today*
+  - *Yesterday*
+  - *Last 7 Days*
+  - *Custom*: Triggers a Flutter Date Range Picker calendar, dynamically updating chip labels (e.g., `Custom (1 Aug - 7 Aug)`).
+- **2.4.2 Transaction Auditing**: Displays a count of logged transactions, total sales aggregation, and void controls.
+
+---
+
+## 3. Non-Functional Requirements (NFR)
+- **3.1 Performance**: Render rates targets 60 FPS on Android mobile.
+- **3.2 Offline Consistency SLA**: 100% functional without network. External CDN resources must not be requested at runtime.
+- **3.3 Data Security**: Database is locally persistent, sandboxed by typical OS user permissions.
+- **3.4 Touch Usability**: Tap targets must be at least $48 \times 48\text{ px}$.
+- **3.5 Target SDKs**:
+  - Android API levels 21 (Lollipop) to 34 (Upside Down Cake).
+  - Linux Desktop GLIBC compliance.
+
+---
+
+# SECTION 2: System Architecture & Technical Specifications
+
+## 4. System Architecture
+The application runs on a clean architecture model separating the data access layer, state managers, and presentation layers.
+
+```
++-----------------------------------------------------------+
+|                    Presentation Layer (UI)                |
+|  [BillingView]      [InventoryView]      [ReportsView]    |
++-----------------------------+-----------------------------+
+                              | Listen / Dispatch
+                              v
++-----------------------------------------------------------+
+|                     State Management                      |
+|                  Provider (POSProvider)                   |
++-----------------------------+-----------------------------+
+                              | Write / Query
+                              v
++-----------------------------------------------------------+
+|                       Storage Layer                       |
+|           SQLite / In-Memory JSON Seed Catalog            |
++-----------------------------------------------------------+
+```
+
+---
+
+## 5. Local Database Architecture & Schema Design
+
+### 5.1 SQLite Configuration
+For Android, sqlite access is facilitated via the `sqflite` plugin. For Linux and native desktop, it is initialized via Native FFI dynamic bindings (`sqflite_common_ffi`).
+
+### 5.2 Entity-Relationship Diagram (ERD)
+
+```mermaid
+erDiagram
+    PRODUCTS {
+        TEXT sku PK
+        TEXT name
+        TEXT category
+        REAL price
+    }
+    SALES {
+        TEXT id PK
+        TEXT customer_phone
+        TEXT customer_name
+        TEXT date_time
+        REAL subtotal
+        REAL discount
+        REAL grand_total
+    }
+    SALE_ITEMS {
+        INTEGER id PK
+        TEXT sale_id FK
+        TEXT product_sku FK
+        INTEGER quantity
+        REAL price
+    }
+    SALES ||--o{ SALE_ITEMS : contains
+    PRODUCTS ||--o{ SALE_ITEMS : references
+```
+
+### 5.3 Complete DDL Schema Scripts
+
+#### 5.3.1 `products` Table
+```sql
+CREATE TABLE products (
+    sku TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    category TEXT NOT NULL,
+    price REAL NOT NULL
+);
+```
+
+#### 5.3.2 `sales` Table
+```sql
+CREATE TABLE sales (
+    id TEXT PRIMARY KEY,
+    customer_phone TEXT,
+    customer_name TEXT,
+    date_time TEXT NOT NULL,
+    subtotal REAL NOT NULL,
+    discount REAL NOT NULL,
+    grand_total REAL NOT NULL
+);
+```
+
+#### 5.3.3 `sale_items` Table
+```sql
+CREATE TABLE sale_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sale_id TEXT NOT NULL,
+    product_sku TEXT NOT NULL,
+    quantity INTEGER NOT NULL,
+    price REAL NOT NULL,
+    FOREIGN KEY(sale_id) REFERENCES sales(id) ON DELETE CASCADE,
+    FOREIGN KEY(product_sku) REFERENCES products(sku) ON DELETE RESTRICT
+);
+```
+
+### 5.4 Database Migration and Data Seeding
+- **Asset Seeding File**: `assets/inventory_data.json` contains the initial items catalog list (1 Sound Crackers, Ground Chakkars, Flower Pots, Rockets, Garland, etc.).
+- **Strategy**: On first launch, the local sqlite database verifies table compliance. If tables are empty, it loads the JSON structure, loops over records, and populates the `products` table.
+
+---
+
+## 6. User Interface Architecture & Mobile Adaptation
+
+### 6.1 Design System Tokens
+- **Primary Color (Rose)**: `#B90538` (used heavily in AppBar, key action triggers, total cards).
+- **Secondary Color**: `#0F172A` (Slate/Dark Charcoal for text and primary headings).
+- **Primary Background**: `#F2F4F6` (High-density ash grey).
+- **Success Green**: `#006947` (Green alert headers).
+- **Danger Red**: `#EF4444` (Delete operations/void actions).
+- **System Fonts**:
+  - *Titles/Metadata*: Google Font `Work Sans` (highly legible).
+  - *Numeric/Monospaced/Totals*: Google Font `JetBrains Mono`.
+
+### 6.2 Mobile Layout Adaptations
+- Displays single-column scroll layouts on portrait displays.
+- Floating autocompletion list overlays remain anchored next to text inputs to prevent soft keyboard overlap constraints.
+
+### 6.3 State Management Blueprint
+`POSProvider` coordinates business logic:
+- Emits `notifyListeners()` when items are modified.
+- Retains customer objects in memory until payment completion.
+- Triggers custom sorting based on menu selects:
+  - `_priceSort` = `low_to_high` / `high_to_low` / `none`
+  - `_priceFilterRange` = `all` / `under_100` / `100_500` / `over_500`
+
+---
+
+# SECTION 3: Technical Stack, Tools & Development Methods
+
+## 7. Tech Stack Specifications
+- **Framework**: Flutter SDK 3.12.x / Dart SDK 3.x
+- **State Management**: `provider: ^6.1.5`
+- **PDF Layout & Generator**: `pdf: ^3.13.0`
+- **Print Spool Platform Bindings**: `printing: ^5.15.0`
+- **Android Target**: Android Gradle Plugin v8.x, Java 17
+
+## 8. Git Branching Strategy
+- **`main`**: Production release-ready code only.
+- **`develop`**: Integration testing branch.
+- **`feature/*`**: Short-lived feature staging branches.
+- **Releases**: Tagged commits (e.g. `v1.0.0-stable`).
+
+---
+
+# SECTION 4: Software Implementation Phases & Work Breakdown
+
+## 9. Software Development Lifecycle (SDLC) Phases
+
+```
+   ┌────────────────────────────────────────────────────────┐
+   │ Phase 1: Inception & UI/UX Redesign (Stitch Spec)     │
+   └───────────────────────────┬────────────────────────────┘
+                               │
+                               v
+   ┌────────────────────────────────────────────────────────┐
+   │ Phase 2: Database Layer & Data Seeding Pipelines      │
+   └───────────────────────────┬────────────────────────────┘
+                               │
+                               v
+   ┌────────────────────────────────────────────────────────┐
+   │ Phase 3: Billing & Cart Business Logic                 │
+   └───────────────────────────┬────────────────────────────┘
+                               │
+                               v
+   ┌────────────────────────────────────────────────────────┐
+   │ Phase 4: PDF Engine & Invoice Printing System          │
+   └───────────────────────────┬────────────────────────────┘
+                               │
+                               v
+   ┌────────────────────────────────────────────────────────┐
+   │ Phase 5: Inventory CRUD & Analytics Modules            │
+   └───────────────────────────┬────────────────────────────┘
+                               │
+                               v
+   ┌────────────────────────────────────────────────────────┐
+   │ Phase 6: Multi-Platform Hardening & Release Preparation│
+   └────────────────────────────────────────────────────────┘
+```
+
+- **Phase 1: Inception / Design**: Align with Stitch colors and typography tokens.
+- **Phase 2: Database / IO Setup**: Create sqlite bindings and parse the JSON catalog asset.
+- **Phase 3: Core Calculations**: Implement cart operations, step counters, and total aggregation checks.
+- **Phase 4: PDF Generation integration**: Program local system A4 previews and thermal system parameters.
+- **Phase 5: Inventory Management**: Refine category filters, price sorts, and custom calendars.
+- **Phase 6: Compilation Build integration**: Export binaries to Linux and compile APK outputs.
+
+---
+
+## 10. Epic Work Breakdown Structure (WBS)
+
+### Epic 1: UI Framework & Theme Engine Tasks
+- Build custom Scaffold wrapper on `HomeScreen` with responsive bottom navigation buttons.
+- Create design token themes matching Work Sans and JetBrains Mono styles.
+
+### Epic 2: Local Datastore Setup
+- Configure `DBHelper` supporting platform isolation checks (OS detection of Mobile vs Desktop FFI).
+- Implement DDL schema commands containing cascading delete safety checks.
+
+### Epic 3: Quick Billing Logic
+- Code autocomplete search inputs matching name/SKU inputs.
+- Register confirmation modal dialog triggers before deleting cart entries.
+
+### Epic 4: Native PDF Generation & Print Interface
+- Implement an inline `InvoiceDialog` preview mockup interface.
+- Integrate system printing callbacks natively calling OS-level drivers.
+
+---
+
+# SECTION 5: Quality Assurance, Security, & Testing
+
+## 11. Testing Strategy
+
+### 11.1 Unit Testing
+Tests verify calculation precision.
+```dart
+test('Verify subtotal calculation match inputs exactly', () {
+  final provider = POSProvider();
+  final product = Product(sku: '123', name: 'Sparkler', category: 'Sparklers', price: 100);
+  provider.addProductToCart(product, 3);
+  expect(provider.subtotal, equals(300.0));
+});
+```
+
+### 11.2 Integration Testing
+- Verify that selecting a product adds it to the cart and triggers a list rebuild.
+- Confirm deletion prompts prevent accidental actions.
+
+---
+
+# SECTION 6: Deployment, Operations, & Maintenance
+
+## 12. Build & Packaging Pipelines
+
+### 12.1 Android APK Compilation
+To compile a debugging APK for local sideloading:
+```bash
+flutter build apk --debug
+```
+To compile a production optimized AOT binary:
+```bash
+flutter build apk --release
+```
+Artifact Output Path: `build/app/outputs/flutter-apk/app-release.apk`
+
+### 12.2 Linux Desktop Packaging
+Compile binary natively targeting local desktop systems:
+```bash
+flutter build linux --release
+```
+Output executable is packaged under: `build/linux/x64/release/bundle/sparkbill`
+
+---
+
+## 13. Maintenance & Troubleshooting Roadmap
+- **No Printers Connected**: Fallback to "Save to Device Storage" which exports target file paths to local device documents.
+- **Database Corruptions**: Application contains a backup recovery system that can re-read seed assets (`assets/inventory_data.json`) during initialization errors.
+- **Phase 2 Expansion Plan**: Include barcode scanning hardware hooks, automatic Google Drive database backups, and customizable GST tax schemes.

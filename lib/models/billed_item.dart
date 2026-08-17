@@ -3,13 +3,29 @@ import 'product.dart';
 class BilledItem {
   final Product product;
   int quantity;
-  final double price;
+  final int pricePaise;
 
   BilledItem({
     required this.product,
     required this.quantity,
-    required this.price,
+    required this.pricePaise,
   });
 
-  double get total => price * quantity;
+  int get total => pricePaise * quantity;
+
+  factory BilledItem.fromJson(Map<String, dynamic> json) {
+    return BilledItem(
+      product: Product.fromJson(json['product'] as Map<String, dynamic>),
+      quantity: (json['quantity'] as num?)?.toInt() ?? 0,
+      pricePaise: (json['pricePaise'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'product': product.toJson(),
+      'quantity': quantity,
+      'pricePaise': pricePaise,
+    };
+  }
 }

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import '../providers/pos_provider.dart';
 import '../models/product.dart';
+import '../utils/money.dart';
 import '../widgets/stepper_input.dart';
 import '../widgets/invoice_dialog.dart';
 
@@ -92,7 +92,7 @@ class _BillingViewState extends State<BillingView> {
       final provider = context.read<POSProvider>();
       final directMatch = provider.products.firstWhere(
         (p) => p.sku.toUpperCase() == typedText || p.name.toUpperCase() == typedText.toUpperCase(),
-        orElse: () => Product(sku: '', name: '', category: '', price: 0),
+        orElse: () => Product(sku: '', name: '', category: '', pricePaise: 0),
       );
 
       if (directMatch.sku.isNotEmpty) {
@@ -126,7 +126,6 @@ class _BillingViewState extends State<BillingView> {
   @override
   Widget build(BuildContext context) {
     final posProvider = context.watch<POSProvider>();
-    final currencyFormat = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
 
     return Scaffold(
       backgroundColor: const Color(0xFFF2F4F6), // surface-container-low
@@ -443,7 +442,7 @@ class _BillingViewState extends State<BillingView> {
                                   Expanded(
                                     flex: 2,
                                     child: Text(
-                                      item.price.toStringAsFixed(2),
+                                      formatRupees(item.pricePaise),
                                       style: GoogleFonts.jetBrainsMono(
                                         fontSize: 12,
                                         color: const Color(0xFF0F172A),
@@ -476,7 +475,7 @@ class _BillingViewState extends State<BillingView> {
                                   Expanded(
                                     flex: 2,
                                     child: Text(
-                                      item.total.toStringAsFixed(2),
+                                      formatRupees(item.total),
                                       style: GoogleFonts.jetBrainsMono(
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold,
@@ -592,7 +591,7 @@ class _BillingViewState extends State<BillingView> {
                             ),
                           ),
                           Text(
-                            posProvider.subtotal.toStringAsFixed(2),
+                            formatRupees(posProvider.subtotal),
                             style: GoogleFonts.jetBrainsMono(
                               fontSize: 13,
                               color: const Color(0xFF0F172A),
@@ -625,7 +624,7 @@ class _BillingViewState extends State<BillingView> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  currencyFormat.format(posProvider.grandTotal),
+                                  formatMoney(posProvider.grandTotal),
                                   style: GoogleFonts.jetBrainsMono(
                                     fontSize: 20,
                                     fontWeight: FontWeight.w700,
@@ -791,7 +790,7 @@ class _BillingViewState extends State<BillingView> {
                           style: GoogleFonts.jetBrainsMono(fontSize: 10, color: const Color(0xFF64748B)),
                         ),
                         trailing: Text(
-                          '₹${item.price.toStringAsFixed(2)}',
+                          formatMoney(item.pricePaise),
                           style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.w600, color: const Color(0xFFB90538)),
                         ),
                         onTap: () => _selectProduct(item),
