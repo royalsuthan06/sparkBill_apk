@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -5,6 +6,9 @@ import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/bill.dart';
 
 class InvoiceDialog extends StatefulWidget {
@@ -22,13 +26,8 @@ class InvoiceDialog extends StatefulWidget {
 }
 
 class _InvoiceDialogState extends State<InvoiceDialog> {
-  String _selectedPrinter = 'System PDF Printer (A4)';
-  final List<String> _printers = [
-    'System PDF Printer (A4)',
-    'XP-80 Thermal POS (USB)',
-    'RP-3200 Bluetooth Printer',
-    'Save to Device Storage'
-  ];
+  bool _billGenerated = false;
+  Uint8List? _generatedPdfBytes;
 
   @override
   Widget build(BuildContext context) {
@@ -51,12 +50,12 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
             // Header Bar
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              color: const Color(0xFFB90538), // Elegant Brand Red
+              color: const Color(0xFFF43F5E), // Elegant Brand Red
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    widget.isReprint ? 'REPRINT RECEIPT' : 'BILL CONFIRMED / PRINT',
+                    widget.isReprint ? 'REPRINT RECEIPT' : 'BILL CONFIRMED',
                     style: GoogleFonts.workSans(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -74,44 +73,6 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
               ),
             ),
 
-            // Printer Configuration Row
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedPrinter,
-                    isExpanded: true,
-                    icon: const Icon(Icons.print_outlined, color: Color(0xFFB90538)),
-                    style: GoogleFonts.workSans(
-                      color: const Color(0xFF0F172A),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    items: _printers.map((printer) {
-                      return DropdownMenuItem(
-                        value: printer,
-                        child: Text(printer),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() {
-                          _selectedPrinter = val;
-                        });
-                      }
-                    },
-                  ),
-                ),
-              ),
-            ),
-
             // Receipt Paper Preview with Brand Identity Border
             Expanded(
               child: Padding(
@@ -119,7 +80,7 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                 child: Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    border: Border.all(color: const Color(0xFFB90538), width: 2), // Brand red border
+                    border: Border.all(color: const Color(0xFFF43F5E), width: 2), // Brand red border
                     borderRadius: BorderRadius.circular(8),
                     boxShadow: const [
                       BoxShadow(
@@ -143,7 +104,7 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                                 style: GoogleFonts.workSans(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w800,
-                                  color: const Color(0xFFB90538), // Brand Red
+                                  color: const Color(0xFFF43F5E), // Brand Red
                                   letterSpacing: 0.5,
                                 ),
                               ),
@@ -171,7 +132,7 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Container(height: 1, color: const Color(0xFFB90538).withOpacity(0.5)),
+                        Container(height: 1, color: const Color(0xFFF43F5E).withOpacity(0.5)),
                         const SizedBox(height: 12),
 
                         // Two column metadata grid
@@ -204,7 +165,7 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                         ),
                         
                         const SizedBox(height: 14),
-                        Container(height: 1, color: const Color(0xFFB90538).withOpacity(0.5)),
+                        Container(height: 1, color: const Color(0xFFF43F5E).withOpacity(0.5)),
                         const SizedBox(height: 10),
 
                         // Item headers
@@ -217,7 +178,7 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                                 style: GoogleFonts.workSans(
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFFB90538),
+                                  color: const Color(0xFFF43F5E),
                                 ),
                               ),
                             ),
@@ -228,7 +189,7 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                                 style: GoogleFonts.workSans(
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFFB90538),
+                                  color: const Color(0xFFF43F5E),
                                 ),
                               ),
                             ),
@@ -239,7 +200,7 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                                 style: GoogleFonts.workSans(
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFFB90538),
+                                  color: const Color(0xFFF43F5E),
                                 ),
                                 textAlign: TextAlign.right,
                               ),
@@ -251,7 +212,7 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                                 style: GoogleFonts.workSans(
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFFB90538),
+                                  color: const Color(0xFFF43F5E),
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -263,7 +224,7 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                                 style: GoogleFonts.workSans(
                                   fontSize: 10.5,
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFFB90538),
+                                  color: const Color(0xFFF43F5E),
                                 ),
                                 textAlign: TextAlign.right,
                               ),
@@ -371,7 +332,7 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                         ),
 
                         const SizedBox(height: 6),
-                        Container(height: 1.5, color: const Color(0xFFB90538)),
+                        Container(height: 1.5, color: const Color(0xFFF43F5E)),
                         const SizedBox(height: 10),
                         
                         Row(
@@ -390,7 +351,7 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                               style: GoogleFonts.jetBrainsMono(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w800,
-                                color: const Color(0xFFB90538),
+                                color: const Color(0xFFF43F5E),
                               ),
                             ),
                           ],
@@ -413,7 +374,7 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                                 style: GoogleFonts.workSans(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFFB90538),
+                                  color: const Color(0xFFF43F5E),
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -437,67 +398,87 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
               ),
             ),
 
-            // Print Action button
+            // Generate Bill + Share Actions
             Padding(
-              padding: const EdgeInsets.all(16),
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  if (_selectedPrinter == 'System PDF Printer (A4)' || _selectedPrinter == 'Save to Device Storage') {
-                    // Generate and layout / print real PDF
-                    try {
-                      final pdfBytes = await _generateInvoicePdf(widget.bill);
-                      await Printing.layoutPdf(
-                        onLayout: (PdfPageFormat format) async => pdfBytes,
-                        name: 'Invoice_${widget.bill.id}',
-                      );
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Error generating PDF: $e'),
-                          backgroundColor: const Color(0xFFEF4444),
-                        ),
-                      );
-                    }
-                  } else {
-                    // Simulate Bluetooth/USB Thermal Printing
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Row(
-                          children: [
-                            const Icon(Icons.check_circle_outline, color: Colors.white),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Sent to $_selectedPrinter. Print completed!',
-                                style: GoogleFonts.workSans(color: Colors.white),
-                              ),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Generate Bill button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        try {
+                          final pdfBytes = await _generateInvoicePdf(widget.bill);
+                          _generatedPdfBytes = pdfBytes;
+                          if (mounted) {
+                            setState(() {
+                              _billGenerated = true;
+                            });
+                          }
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error generating PDF: $e'),
+                              backgroundColor: const Color(0xFFEF4444),
                             ),
-                          ],
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF43F5E),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        backgroundColor: const Color(0xFF006947), // succeed green
-                        duration: const Duration(seconds: 2),
+                        elevation: 0,
                       ),
-                    );
-                  }
-                  if (mounted) Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFB90538),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                      icon: const Icon(Icons.receipt_long, size: 20),
+                      label: Text(
+                        'GENERATE BILL',
+                        style: GoogleFonts.workSans(
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
                   ),
-                  elevation: 0,
-                ),
-                icon: const Icon(Icons.print, size: 20),
-                label: Text(
-                  'EXECUTE PRINT',
-                  style: GoogleFonts.workSans(
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                ),
+
+                  // Share row - visible only after bill is generated
+                  if (_billGenerated) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // WhatsApp
+                        _shareIcon(
+                          icon: Icons.chat,
+                          label: 'WhatsApp',
+                          color: const Color(0xFF25D366),
+                          onTap: () => _shareViaWhatsApp(),
+                        ),
+                        const SizedBox(width: 16),
+                        // Email
+                        _shareIcon(
+                          icon: Icons.email_outlined,
+                          label: 'Email',
+                          color: const Color(0xFF1A73E8),
+                          onTap: () => _shareViaEmail(),
+                        ),
+                        const SizedBox(width: 16),
+                        // Print
+                        _shareIcon(
+                          icon: Icons.print,
+                          label: 'Print',
+                          color: const Color(0xFF64748B),
+                          onTap: () => _printBill(),
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
               ),
             ),
           ],
@@ -515,7 +496,7 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
           style: GoogleFonts.workSans(
             fontSize: 9.5,
             fontWeight: FontWeight.bold,
-            color: const Color(0xFFB90538),
+            color: const Color(0xFFF43F5E),
           ),
         ),
         const SizedBox(height: 1),
@@ -528,6 +509,71 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _shareIcon({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: color.withOpacity(0.3)),
+            ),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: GoogleFonts.workSans(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF64748B),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _shareViaWhatsApp() async {
+    if (_generatedPdfBytes == null) return;
+    final tempDir = await getTemporaryDirectory();
+    final file = File('${tempDir.path}/Invoice_${widget.bill.id}.pdf');
+    await file.writeAsBytes(_generatedPdfBytes!);
+    await Share.shareXFiles([XFile(file.path)], text: 'Invoice ${widget.bill.id}');
+  }
+
+  Future<void> _shareViaEmail() async {
+    if (_generatedPdfBytes == null) return;
+    final tempDir = await getTemporaryDirectory();
+    final file = File('${tempDir.path}/Invoice_${widget.bill.id}.pdf');
+    await file.writeAsBytes(_generatedPdfBytes!);
+    final uri = Uri(
+      scheme: 'mailto',
+      query: 'subject=Invoice ${widget.bill.id}&body=Please find attached the invoice for your order.',
+    );
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
+  Future<void> _printBill() async {
+    if (_generatedPdfBytes == null) return;
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => _generatedPdfBytes!,
+      name: 'Invoice_${widget.bill.id}',
     );
   }
 

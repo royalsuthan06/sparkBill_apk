@@ -31,13 +31,13 @@ class _ReportsViewState extends State<ReportsView> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFFB90538), // primary rose
+              primary: Color(0xFFF43F5E), // primary rose
               onPrimary: Colors.white,
               onSurface: Color(0xFF0F172A),
             ),
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFFB90538),
+                foregroundColor: const Color(0xFFF43F5E),
               ),
             ),
           ),
@@ -95,7 +95,7 @@ class _ReportsViewState extends State<ReportsView> {
             fontWeight: FontWeight.w700,
             fontSize: 18,
             letterSpacing: -0.5,
-            color: const Color(0xFFB90538), // primary rose
+            color: const Color(0xFFF43F5E), // primary rose
           ),
         ),
         backgroundColor: Colors.white,
@@ -217,10 +217,10 @@ class _ReportsViewState extends State<ReportsView> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: isActive ? const Color(0xFFB90538) : Colors.white,
+                      color: isActive ? const Color(0xFFF43F5E) : Colors.white,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: isActive ? const Color(0xFFB90538) : const Color(0xFFCBD5E1),
+                        color: isActive ? const Color(0xFFF43F5E) : const Color(0xFFCBD5E1),
                       ),
                     ),
                     child: Text(
@@ -311,7 +311,7 @@ class _ReportsViewState extends State<ReportsView> {
                                 const SizedBox(width: 12),
                                 // Export PDF Action
                                 IconButton(
-                                  icon: const Icon(Icons.picture_as_pdf, color: Color(0xFFB90538), size: 18),
+                                  icon: const Icon(Icons.picture_as_pdf, color: Color(0xFFF43F5E), size: 18),
                                   onPressed: () {
                                     // Trigger Print view (reprint)
                                     showDialog(

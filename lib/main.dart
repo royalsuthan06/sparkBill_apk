@@ -25,7 +25,7 @@ class SparkBillPOSApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: const ColorScheme.light(
-          primary: Color(0xFFB90538), // Rose Crimson Primary
+          primary: Color(0xFFF43F5E), // Rose Crimson Primary
           secondary: Color(0xFF515F74), // Industrial slate secondary
           background: Color(0xFFF7F9FB), // Tonal low surface
           surface: Colors.white,
@@ -47,7 +47,7 @@ class SparkBillPOSApp extends StatelessWidget {
             fontWeight: FontWeight.w600,
             fontSize: 18,
           ),
-          iconTheme: const IconThemeData(color: Color(0xFFB90538)),
+          iconTheme: const IconThemeData(color: Color(0xFFF43F5E)),
         ),
       ),
       home: const HomeScreen(),

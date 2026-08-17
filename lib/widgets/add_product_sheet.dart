@@ -57,7 +57,7 @@ class _AddProductSheetState extends State<AddProductSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = const Color(0xFFB90538);
+    final primaryColor = const Color(0xFFF43F5E);
 
     return Padding(
       // Ensure the keyboard doesn't cover input fields
@@ -100,10 +100,12 @@ class _AddProductSheetState extends State<AddProductSheet> {
               // SKU Input
               TextFormField(
                 controller: _skuController,
+                maxLength: 20,
                 textCapitalization: TextCapitalization.characters,
                 decoration: InputDecoration(
                   labelText: 'SKU Code',
                   hintText: 'e.g. 152',
+                  counterText: '',
                   prefixIcon: const Icon(Icons.qr_code, size: 20),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -125,9 +127,11 @@ class _AddProductSheetState extends State<AddProductSheet> {
               // Name Input
               TextFormField(
                 controller: _nameController,
+                maxLength: 50,
                 decoration: InputDecoration(
                   labelText: 'Product Name',
                   hintText: 'e.g. 7 HILLS (60 ITEM BOX)',
+                  counterText: '',
                   prefixIcon: const Icon(Icons.shopping_bag_outlined, size: 20),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -174,9 +178,11 @@ class _AddProductSheetState extends State<AddProductSheet> {
               // Price Input
               TextFormField(
                 controller: _priceController,
+                maxLength: 10,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: InputDecoration(
                   labelText: 'Price (₹)',
+                  counterText: '',
                   prefixText: '₹ ',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),

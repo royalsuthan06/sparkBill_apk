@@ -123,7 +123,7 @@ class _InventoryViewState extends State<InventoryView> {
             fontWeight: FontWeight.w700,
             fontSize: 18,
             letterSpacing: -0.5,
-            color: const Color(0xFFB90538), // primary rose
+            color: const Color(0xFFF43F5E), // primary rose
           ),
         ),
         backgroundColor: Colors.white,
@@ -149,9 +149,11 @@ class _InventoryViewState extends State<InventoryView> {
                         height: 40,
                         child: TextField(
                           controller: _searchController,
+                          maxLength: 20,
                           style: GoogleFonts.workSans(fontSize: 13),
                           decoration: InputDecoration(
                             hintText: 'Search SKU or Name...',
+                            counterText: '',
                             prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF64748B)),
                             contentPadding: const EdgeInsets.symmetric(vertical: 8),
                             filled: true,
@@ -162,7 +164,7 @@ class _InventoryViewState extends State<InventoryView> {
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: Color(0xFFB90538), width: 1.2),
+                              borderSide: const BorderSide(color: Color(0xFFF43F5E), width: 1.2),
                             ),
                           ),
                         ),
@@ -185,7 +187,7 @@ class _InventoryViewState extends State<InventoryView> {
                         height: 40,
                         width: 40,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFB90538),
+                          color: const Color(0xFFF43F5E),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(Icons.add, color: Colors.white, size: 20),
@@ -221,7 +223,7 @@ class _InventoryViewState extends State<InventoryView> {
                                   color: isSelected ? const Color(0xFFDC2C4F) : const Color(0xFFF8FAFC),
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
-                                    color: isSelected ? const Color(0xFFB90538) : const Color(0xFFCBD5E1),
+                                    color: isSelected ? const Color(0xFFF43F5E) : const Color(0xFFCBD5E1),
                                   ),
                                 ),
                                 child: Text(
@@ -316,12 +318,12 @@ class _InventoryViewState extends State<InventoryView> {
                         width: 32,
                         decoration: BoxDecoration(
                           color: (_priceSort != 'none' || _priceFilterRange != 'all') 
-                              ? const Color(0xFFB90538) 
+                              ? const Color(0xFFF43F5E) 
                               : const Color(0xFFF8FAFC),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
                             color: (_priceSort != 'none' || _priceFilterRange != 'all') 
-                                ? const Color(0xFFB90538) 
+                                ? const Color(0xFFF43F5E) 
                                 : const Color(0xFFCBD5E1),
                           ),
                         ),

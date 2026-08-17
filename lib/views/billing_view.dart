@@ -163,7 +163,7 @@ class _BillingViewState extends State<BillingView> {
             fontWeight: FontWeight.w700,
             fontSize: 22,
             letterSpacing: -0.5,
-            color: const Color(0xFFB90538), // primary rose
+            color: const Color(0xFFF43F5E), // primary rose
           ),
         ),
         backgroundColor: Colors.white,
@@ -191,9 +191,11 @@ class _BillingViewState extends State<BillingView> {
                         child: TextField(
                           controller: _phoneController,
                           keyboardType: TextInputType.phone,
+                          maxLength: 10,
                           style: GoogleFonts.jetBrainsMono(fontSize: 13, color: const Color(0xFF0F172A)),
                           decoration: InputDecoration(
                             hintText: 'Mobile No.',
+                            counterText: '',
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(4),
@@ -204,7 +206,7 @@ class _BillingViewState extends State<BillingView> {
                                 topLeft: Radius.circular(4),
                                 bottomLeft: Radius.circular(4),
                               ),
-                              borderSide: BorderSide(color: Color(0xFFB90538), width: 1.5),
+                              borderSide: BorderSide(color: Color(0xFFF43F5E), width: 1.5),
                             ),
                           ),
                         ),
@@ -219,9 +221,11 @@ class _BillingViewState extends State<BillingView> {
                         child: TextField(
                           controller: _nameController,
                           keyboardType: TextInputType.name,
+                          maxLength: 30,
                           style: GoogleFonts.workSans(fontSize: 13, color: const Color(0xFF0F172A)),
                           decoration: InputDecoration(
                             hintText: 'Customer Name',
+                            counterText: '',
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(4),
@@ -232,7 +236,7 @@ class _BillingViewState extends State<BillingView> {
                                 topRight: Radius.circular(4),
                                 bottomRight: Radius.circular(4),
                               ),
-                              borderSide: BorderSide(color: Color(0xFFB90538), width: 1.5),
+                              borderSide: BorderSide(color: Color(0xFFF43F5E), width: 1.5),
                             ),
                           ),
                         ),
@@ -261,9 +265,11 @@ class _BillingViewState extends State<BillingView> {
                         child: TextField(
                           controller: _searchController,
                           focusNode: _searchFocusNode,
+                          maxLength: 20,
                           style: GoogleFonts.jetBrainsMono(fontSize: 13, color: const Color(0xFF0F172A)),
                           decoration: InputDecoration(
                             hintText: 'Search SKU or Item name...',
+                            counterText: '',
                             prefixIcon: const Icon(Icons.search, size: 18),
                             contentPadding: const EdgeInsets.symmetric(vertical: 8),
                             border: OutlineInputBorder(
@@ -271,7 +277,7 @@ class _BillingViewState extends State<BillingView> {
                               borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
                             ),
                             focusedBorder: const OutlineInputBorder(
-                              borderSide: BorderSide(color: Color(0xFFB90538), width: 1.5),
+                              borderSide: BorderSide(color: Color(0xFFF43F5E), width: 1.5),
                             ),
                           ),
                         ),
@@ -299,7 +305,7 @@ class _BillingViewState extends State<BillingView> {
                               child: ElevatedButton(
                                 onPressed: _addItemToCart,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFB90538),
+                                  backgroundColor: const Color(0xFFF43F5E),
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(4),
@@ -762,7 +768,7 @@ class _BillingViewState extends State<BillingView> {
                               style: GoogleFonts.workSans(fontWeight: FontWeight.bold, fontSize: 13),
                             ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFB90538),
+                              backgroundColor: const Color(0xFFF43F5E),
                               foregroundColor: Colors.white,
                               elevation: 0,
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -818,7 +824,7 @@ class _BillingViewState extends State<BillingView> {
                         ),
                         trailing: Text(
                           '₹${item.price.toStringAsFixed(2)}',
-                          style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.w600, color: const Color(0xFFB90538)),
+                          style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.w600, color: const Color(0xFFF43F5E)),
                         ),
                         onTap: () => _selectProduct(item),
                       );
