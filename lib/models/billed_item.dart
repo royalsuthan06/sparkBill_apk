@@ -15,7 +15,7 @@ class BilledItem {
 
   factory BilledItem.fromJson(Map<String, dynamic> json) {
     return BilledItem(
-      product: Product.fromJson(json['product'] as Map<String, dynamic>),
+      product: Product.fromJson(Map<String, dynamic>.from(json['product'] as Map)),
       quantity: (json['quantity'] as num?)?.toInt() ?? 0,
       pricePaise: (json['pricePaise'] as num?)?.toInt() ?? 0,
     );

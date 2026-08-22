@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'providers/pos_provider.dart';
@@ -19,17 +20,29 @@ class SparkBillPOSApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDarkMode = context.watch<POSProvider>().isDarkMode;
+
     return MaterialApp(
-      title: 'Arun Crackers POS',
+      title: 'SparkBill POS',
       debugShowCheckedModeBanner: false,
+      themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      scrollBehavior: const MaterialScrollBehavior().copyWith(
+        physics: const BouncingScrollPhysics(),
+        dragDevices: {
+          PointerDeviceKind.mouse,
+          PointerDeviceKind.touch,
+          PointerDeviceKind.trackpad,
+        },
+      ),
       theme: ThemeData(
         useMaterial3: true,
+        brightness: Brightness.light,
         colorScheme: const ColorScheme.light(
-          primary: Color(0xFFB90538), // Rose Crimson Primary
-          secondary: Color(0xFF515F74), // Industrial slate secondary
-          background: Color(0xFFF7F9FB), // Tonal low surface
-          surface: Colors.white,
-          error: Color(0xFFEF4444), // Destructive Orange-Red
+          primary: Color(0xFFF43F5E),
+          secondary: Color(0xFF515F74),
+          surface: Color(0xFFF7F9FB),
+          onSurface: Color(0xFF0F172A),
+          error: Color(0xFFEF4444),
         ),
         scaffoldBackgroundColor: const Color(0xFFF2F4F6),
         textTheme: GoogleFonts.workSansTextTheme(
@@ -47,7 +60,36 @@ class SparkBillPOSApp extends StatelessWidget {
             fontWeight: FontWeight.w600,
             fontSize: 18,
           ),
-          iconTheme: const IconThemeData(color: Color(0xFFB90538)),
+          iconTheme: const IconThemeData(color: Color(0xFFF43F5E)),
+        ),
+      ),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.dark,
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFFF43F5E),
+          secondary: Color(0xFF94A3B8),
+          surface: Color(0xFF1E293B),
+          onSurface: Color(0xFFF1F5F9),
+          error: Color(0xFFEF4444),
+        ),
+        scaffoldBackgroundColor: const Color(0xFF0F172A),
+        textTheme: GoogleFonts.workSansTextTheme(
+          Theme.of(context).textTheme.copyWith(
+            bodyLarge: const TextStyle(color: Color(0xFFF1F5F9)),
+            bodyMedium: const TextStyle(color: Color(0xFFF1F5F9)),
+          ),
+        ),
+        appBarTheme: AppBarTheme(
+          backgroundColor: const Color(0xFF1E293B),
+          foregroundColor: const Color(0xFFF1F5F9),
+          elevation: 0,
+          titleTextStyle: GoogleFonts.workSans(
+            color: const Color(0xFFF1F5F9),
+            fontWeight: FontWeight.w600,
+            fontSize: 18,
+          ),
+          iconTheme: const IconThemeData(color: Color(0xFFF43F5E)),
         ),
       ),
       home: const HomeScreen(),

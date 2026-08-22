@@ -42,12 +42,13 @@ class _StepperInputState extends State<StepperInput> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       height: 44,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: const Color(0xFFCBD5E1)),
+        border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
       ),
       child: Row(
         children: [
@@ -75,7 +76,7 @@ class _StepperInputState extends State<StepperInput> {
                   style: GoogleFonts.jetBrainsMono(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF0F172A),
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -92,7 +93,7 @@ class _StepperInputState extends State<StepperInput> {
                 style: GoogleFonts.jetBrainsMono(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF0F172A),
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
                 decoration: const InputDecoration(
                   isDense: true,
@@ -128,7 +129,7 @@ class _StepperInputState extends State<StepperInput> {
                   style: GoogleFonts.jetBrainsMono(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF0F172A),
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),

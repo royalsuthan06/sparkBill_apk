@@ -57,7 +57,8 @@ class _AddProductSheetState extends State<AddProductSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final primaryColor = const Color(0xFFB90538);
+    final primaryColor = const Color(0xFFF43F5E);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       // Ensure the keyboard doesn't cover input fields
@@ -80,7 +81,7 @@ class _AddProductSheetState extends State<AddProductSheet> {
                   width: 48,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFECEEF0),
+                    color: isDark ? const Color(0xFF334155) : const Color(0xFFECEEF0),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -92,7 +93,7 @@ class _AddProductSheetState extends State<AddProductSheet> {
                 style: GoogleFonts.workSans(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF0F172A),
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -100,14 +101,16 @@ class _AddProductSheetState extends State<AddProductSheet> {
               // SKU Input
               TextFormField(
                 controller: _skuController,
+                maxLength: 20,
                 textCapitalization: TextCapitalization.characters,
                 decoration: InputDecoration(
                   labelText: 'SKU Code',
                   hintText: 'e.g. 152',
+                  counterText: '',
                   prefixIcon: const Icon(Icons.qr_code, size: 20),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                    borderSide: BorderSide(color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -125,13 +128,15 @@ class _AddProductSheetState extends State<AddProductSheet> {
               // Name Input
               TextFormField(
                 controller: _nameController,
+                maxLength: 50,
                 decoration: InputDecoration(
                   labelText: 'Product Name',
                   hintText: 'e.g. 7 HILLS (60 ITEM BOX)',
+                  counterText: '',
                   prefixIcon: const Icon(Icons.shopping_bag_outlined, size: 20),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                    borderSide: BorderSide(color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -143,7 +148,7 @@ class _AddProductSheetState extends State<AddProductSheet> {
               const SizedBox(height: 12),
               // Category Dropdown Selection
               DropdownButtonFormField<String>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 items: _categories.map((cat) {
                   return DropdownMenuItem(
                     value: cat,
@@ -162,7 +167,7 @@ class _AddProductSheetState extends State<AddProductSheet> {
                   prefixIcon: const Icon(Icons.category_outlined, size: 20),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                    borderSide: BorderSide(color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -174,13 +179,15 @@ class _AddProductSheetState extends State<AddProductSheet> {
               // Price Input
               TextFormField(
                 controller: _priceController,
+                maxLength: 10,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: InputDecoration(
                   labelText: 'Price (₹)',
+                  counterText: '',
                   prefixText: '₹ ',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                    borderSide: BorderSide(color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),

@@ -1,4 +1,6 @@
 {
     "git.ignoreLimitWarning": true,
-    "java.compile.nullAnalysis.mode": "disabled"
+    "java.compile.nullAnalysis.mode": "disabled",
+    "cmake.sourceDirectory": "X:/PROject/mobile/flutter sparkbill/windows",
+    "java.configuration.updateBuildConfiguration": "interactive"
 }

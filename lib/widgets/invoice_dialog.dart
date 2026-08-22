@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -7,6 +7,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import '../models/bill.dart';
 import '../utils/money.dart';
+import '../services/backup_service.dart';
 
 class InvoiceDialog extends StatefulWidget {
   final Bill bill;
@@ -23,41 +24,68 @@ class InvoiceDialog extends StatefulWidget {
 }
 
 class _InvoiceDialogState extends State<InvoiceDialog> {
-  String _selectedPrinter = 'System PDF Printer (A4)';
-  final List<String> _printers = [
-    'System PDF Printer (A4)',
-    'XP-80 Thermal POS (USB)',
-    'RP-3200 Bluetooth Printer',
-    'Save to Device Storage'
-  ];
+  bool _billGenerated = false;
+  Uint8List? _generatedPdfBytes;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _autoGenerateAndSaveBill();
+    });
+  }
+
+  Future<void> _autoGenerateAndSaveBill() async {
+    try {
+      final pdfBytes = await _generateInvoicePdf(widget.bill);
+      _generatedPdfBytes = pdfBytes;
+
+      if (!kIsWeb) {
+        final fileName = 'Invoice_${widget.bill.id}.pdf';
+        await BackupService.saveFileToLocalStorage(fileName, pdfBytes);
+      }
+
+      if (mounted) {
+        setState(() {
+          _billGenerated = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error auto-generating PDF: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('dd-MM-yyyy hh:mm a');
     final formattedDate = dateFormat.format(widget.bill.dateTime);
+    final isWide = MediaQuery.sizeOf(context).width > 600;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: isWide ? 80 : 16,
+        vertical: 24,
+      ),
       clipBehavior: Clip.antiAlias,
       child: Container(
-        color: const Color(0xFFFDFDFD),
-        constraints: const BoxConstraints(maxWidth: 420),
+        color: Theme.of(context).colorScheme.surface,
+        constraints: BoxConstraints(maxWidth: isWide ? 520 : 420),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Header Bar
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              color: const Color(0xFFB90538), // Elegant Brand Red
+              color: const Color(0xFFF43F5E),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    widget.isReprint ? 'REPRINT RECEIPT' : 'BILL CONFIRMED / PRINT',
+                    widget.isReprint ? 'REPRINT RECEIPT' : 'BILL CONFIRMED',
                     style: GoogleFonts.workSans(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -74,59 +102,19 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                 ],
               ),
             ),
-
-            // Printer Configuration Row
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedPrinter,
-                    isExpanded: true,
-                    icon: const Icon(Icons.print_outlined, color: Color(0xFFB90538)),
-                    style: GoogleFonts.workSans(
-                      color: const Color(0xFF0F172A),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                    ),
-                    items: _printers.map((printer) {
-                      return DropdownMenuItem(
-                        value: printer,
-                        child: Text(printer),
-                      );
-                    }).toList(),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() {
-                          _selectedPrinter = val;
-                        });
-                      }
-                    },
-                  ),
-                ),
-              ),
-            ),
-
-            // Receipt Paper Preview with Brand Identity Border
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
-                    border: Border.all(color: const Color(0xFFB90538), width: 2), // Brand red border
+                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                    border: Border.all(color: const Color(0xFFF43F5E), width: 2),
                     borderRadius: BorderRadius.circular(8),
-                    boxShadow: const [
+                    boxShadow: [
                       BoxShadow(
-                        color: Color(0x0C000000),
+                        color: isDark ? Colors.transparent : const Color(0x0C000000),
                         blurRadius: 6,
-                        offset: Offset(0, 3),
+                        offset: const Offset(0, 3),
                       )
                     ],
                   ),
@@ -135,7 +123,6 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Store Info
                         Center(
                           child: Column(
                             children: [
@@ -144,7 +131,7 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                                 style: GoogleFonts.workSans(
                                   fontSize: 22,
                                   fontWeight: FontWeight.w800,
-                                  color: const Color(0xFFB90538), // Brand Red
+                                  color: const Color(0xFFF43F5E),
                                   letterSpacing: 0.5,
                                 ),
                               ),
@@ -153,7 +140,7 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                                 '7/300/1, Senthur Nagar, Sivakasi to kazhugumalai main road,\nnear enammeenachipuram bus stop, Vembakko ai, Sivakasi - 626131',
                                 style: GoogleFonts.workSans(
                                   fontSize: 10,
-                                  color: const Color(0xFF64748B),
+                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                                   fontWeight: FontWeight.w500,
                                 ),
                                 textAlign: TextAlign.center,
@@ -163,7 +150,7 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                                 'For order: 8667784469 | GPay / WhatsApp: 9750510650',
                                 style: GoogleFonts.workSans(
                                   fontSize: 9.5,
-                                  color: const Color(0xFF64748B),
+                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                                   fontWeight: FontWeight.w500,
                                 ),
                                 textAlign: TextAlign.center,
@@ -172,10 +159,8 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Container(height: 1, color: const Color(0xFFB90538).withOpacity(0.5)),
+                        Container(height: 1, color: const Color(0xFFF43F5E).withValues(alpha: 0.5)),
                         const SizedBox(height: 12),
-
-                        // Two column metadata grid
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -203,79 +188,36 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                             ),
                           ],
                         ),
-                        
                         const SizedBox(height: 14),
-                        Container(height: 1, color: const Color(0xFFB90538).withOpacity(0.5)),
+                        Container(height: 1, color: const Color(0xFFF43F5E).withValues(alpha: 0.5)),
                         const SizedBox(height: 10),
-
-                        // Item headers
                         Row(
                           children: [
                             SizedBox(
                               width: 30,
-                              child: Text(
-                                'S.No',
-                                style: GoogleFonts.workSans(
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFFB90538),
-                                ),
-                              ),
+                              child: Text('S.No', style: GoogleFonts.workSans(fontSize: 10.5, fontWeight: FontWeight.bold, color: const Color(0xFFF43F5E))),
                             ),
                             Expanded(
                               flex: 40,
-                              child: Text(
-                                'Item Name',
-                                style: GoogleFonts.workSans(
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFFB90538),
-                                ),
-                              ),
+                              child: Text('Item Name', style: GoogleFonts.workSans(fontSize: 10.5, fontWeight: FontWeight.bold, color: const Color(0xFFF43F5E))),
                             ),
                             Expanded(
                               flex: 30,
-                              child: Text(
-                                'Price',
-                                style: GoogleFonts.workSans(
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFFB90538),
-                                ),
-                                textAlign: TextAlign.right,
-                              ),
+                              child: Text('Price', style: GoogleFonts.workSans(fontSize: 10.5, fontWeight: FontWeight.bold, color: const Color(0xFFF43F5E)), textAlign: TextAlign.right),
                             ),
                             Expanded(
                               flex: 25,
-                              child: Text(
-                                'Quantity',
-                                style: GoogleFonts.workSans(
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFFB90538),
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
+                              child: Text('Quantity', style: GoogleFonts.workSans(fontSize: 10.5, fontWeight: FontWeight.bold, color: const Color(0xFFF43F5E)), textAlign: TextAlign.center),
                             ),
                             Expanded(
                               flex: 35,
-                              child: Text(
-                                'Total',
-                                style: GoogleFonts.workSans(
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFFB90538),
-                                ),
-                                textAlign: TextAlign.right,
-                              ),
+                              child: Text('Total', style: GoogleFonts.workSans(fontSize: 10.5, fontWeight: FontWeight.bold, color: const Color(0xFFF43F5E)), textAlign: TextAlign.right),
                             ),
                           ],
                         ),
                         const SizedBox(height: 6),
-                        Container(height: 1, color: const Color(0xFFE2E8F0)),
+                        Container(height: 1, color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                         const SizedBox(height: 6),
-
-                        // Billed Items lines
                         ...List.generate(widget.bill.items.length, (index) {
                           final item = widget.bill.items[index];
                           return Padding(
@@ -285,120 +227,49 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                               children: [
                                 SizedBox(
                                   width: 30,
-                                  child: Text(
-                                    '${index + 1}',
-                                    style: GoogleFonts.jetBrainsMono(
-                                      fontSize: 10,
-                                      color: const Color(0xFF0F172A),
-                                    ),
-                                  ),
+                                  child: Text('${index + 1}', style: GoogleFonts.jetBrainsMono(fontSize: 10, color: Theme.of(context).colorScheme.onSurface)),
                                 ),
                                 Expanded(
                                   flex: 40,
-                                  child: Text(
-                                    item.product.name,
-                                    style: GoogleFonts.workSans(
-                                      fontSize: 10,
-                                      color: const Color(0xFF0F172A),
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
+                                  child: Text(item.product.name, style: GoogleFonts.workSans(fontSize: 10, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w500)),
                                 ),
                                 Expanded(
                                   flex: 30,
-                                  child: Text(
-                                    'INR ${formatRupees(item.pricePaise)}',
-                                    style: GoogleFonts.jetBrainsMono(
-                                      fontSize: 9.5,
-                                      color: const Color(0xFF0F172A),
-                                    ),
-                                    textAlign: TextAlign.right,
-                                  ),
+                                  child: Text('INR ${formatRupees(item.pricePaise)}', style: GoogleFonts.jetBrainsMono(fontSize: 9.5, color: Theme.of(context).colorScheme.onSurface), textAlign: TextAlign.right),
                                 ),
                                 Expanded(
                                   flex: 25,
-                                  child: Text(
-                                    item.quantity.toString(),
-                                    style: GoogleFonts.jetBrainsMono(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF0F172A),
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
+                                  child: Text(item.quantity.toString(), style: GoogleFonts.jetBrainsMono(fontSize: 10, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface), textAlign: TextAlign.center),
                                 ),
                                 Expanded(
                                   flex: 35,
-                                  child: Text(
-                                    'INR ${formatRupees(item.total)}',
-                                    style: GoogleFonts.jetBrainsMono(
-                                      fontSize: 9.5,
-                                      fontWeight: FontWeight.bold,
-                                      color: const Color(0xFF0F172A),
-                                    ),
-                                    textAlign: TextAlign.right,
-                                  ),
+                                  child: Text('INR ${formatRupees(item.total)}', style: GoogleFonts.jetBrainsMono(fontSize: 9.5, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface), textAlign: TextAlign.right),
                                 ),
                               ],
                             ),
                           );
                         }),
-
                         const SizedBox(height: 8),
-                        Container(height: 1, color: const Color(0xFFE2E8F0)),
+                        Container(height: 1, color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                         const SizedBox(height: 8),
-
-                        // Total Row inside Table area
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'Total',
-                              style: GoogleFonts.workSans(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: const Color(0xFF64748B),
-                              ),
-                            ),
-                            Text(
-                              'INR ${formatRupees(widget.bill.grandTotalPaise)}',
-                              style: GoogleFonts.jetBrainsMono(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: const Color(0xFF0F172A),
-                              ),
-                            ),
+                            Text('Total', style: GoogleFonts.workSans(fontSize: 11, fontWeight: FontWeight.bold, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
+                            Text('INR ${formatRupees(widget.bill.grandTotalPaise)}', style: GoogleFonts.jetBrainsMono(fontSize: 11, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                           ],
                         ),
-
                         const SizedBox(height: 6),
-                        Container(height: 1.5, color: const Color(0xFFB90538)),
+                        Container(height: 1.5, color: const Color(0xFFF43F5E)),
                         const SizedBox(height: 10),
-                        
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'Total Amount:',
-                              style: GoogleFonts.workSans(
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                                color: const Color(0xFF0F172A),
-                              ),
-                            ),
-                            Text(
-                              'INR ${formatRupees(widget.bill.grandTotalPaise)}',
-                              style: GoogleFonts.jetBrainsMono(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w800,
-                                color: const Color(0xFFB90538),
-                              ),
-                            ),
+                            Text('Total Amount:', style: GoogleFonts.workSans(fontSize: 13, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                            Text('INR ${formatRupees(widget.bill.grandTotalPaise)}', style: GoogleFonts.jetBrainsMono(fontSize: 14, fontWeight: FontWeight.w800, color: const Color(0xFFF43F5E))),
                           ],
                         ),
-                        
                         const SizedBox(height: 24),
-                        // Premium Styled Footer section
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
@@ -411,21 +282,13 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                             children: [
                               Text(
                                 'Thank you for your business! We wish you a safe and sparky celebration!',
-                                style: GoogleFonts.workSans(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFFB90538),
-                                ),
+                                style: GoogleFonts.workSans(fontSize: 10, fontWeight: FontWeight.bold, color: const Color(0xFFF43F5E)),
                                 textAlign: TextAlign.center,
                               ),
                               const SizedBox(height: 6),
                               Text(
                                 'This is a computer-generated invoice and does not require a physical signature.',
-                                style: GoogleFonts.workSans(
-                                  fontSize: 8.5,
-                                  color: const Color(0xFF64748B),
-                                  fontWeight: FontWeight.w500,
-                                ),
+                                style: GoogleFonts.workSans(fontSize: 8.5, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B), fontWeight: FontWeight.w500),
                                 textAlign: TextAlign.center,
                               ),
                             ],
@@ -437,68 +300,56 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                 ),
               ),
             ),
-
-            // Print Action button
             Padding(
-              padding: const EdgeInsets.all(16),
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  if (_selectedPrinter == 'System PDF Printer (A4)' || _selectedPrinter == 'Save to Device Storage') {
-                    // Generate and layout / print real PDF
-                    try {
-                      final pdfBytes = await _generateInvoicePdf(widget.bill);
-                      await Printing.layoutPdf(
-                        onLayout: (PdfPageFormat format) async => pdfBytes,
-                        name: 'Invoice_${widget.bill.id}',
-                      );
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Error generating PDF: $e'),
-                          backgroundColor: const Color(0xFFEF4444),
-                        ),
-                      );
-                    }
-                  } else {
-                    // Simulate Bluetooth/USB Thermal Printing
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Row(
-                          children: [
-                            const Icon(Icons.check_circle_outline, color: Colors.white),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Sent to $_selectedPrinter. Print completed!',
-                                style: GoogleFonts.workSans(color: Colors.white),
-                              ),
-                            ),
-                          ],
-                        ),
-                        backgroundColor: const Color(0xFF006947), // succeed green
-                        duration: const Duration(seconds: 2),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!_billGenerated)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: CircularProgressIndicator(color: Color(0xFFF43F5E)),
                       ),
-                    );
-                  }
-                  if (mounted) Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFB90538),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  elevation: 0,
-                ),
-                icon: const Icon(Icons.print, size: 20),
-                label: Text(
-                  'EXECUTE PRINT',
-                  style: GoogleFonts.workSans(
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                ),
+                    )
+                  else ...[
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _printBill(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFF43F5E),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          elevation: 0,
+                        ),
+                        icon: const Icon(Icons.print, size: 20),
+                        label: Text(
+                          'PRINT RECEIPT',
+                          style: GoogleFonts.workSans(fontWeight: FontWeight.w600, letterSpacing: 0.5),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF64748B),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          side: BorderSide(color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: Text(
+                          'CLOSE',
+                          style: GoogleFonts.workSans(fontWeight: FontWeight.w600, letterSpacing: 0.5),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
           ],
@@ -511,28 +362,23 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: GoogleFonts.workSans(
-            fontSize: 9.5,
-            fontWeight: FontWeight.bold,
-            color: const Color(0xFFB90538),
-          ),
-        ),
+        Text(label, style: GoogleFonts.workSans(fontSize: 9.5, fontWeight: FontWeight.bold, color: const Color(0xFFF43F5E))),
         const SizedBox(height: 1),
-        Text(
-          value,
-          style: GoogleFonts.jetBrainsMono(
-            fontSize: 10.5,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF0F172A),
-          ),
-        ),
+        Text(value, style: GoogleFonts.jetBrainsMono(fontSize: 10.5, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
       ],
     );
   }
 
-  // Generates real PDF invoice matching user's recommended layout and colors
+
+
+  Future<void> _printBill() async {
+    if (_generatedPdfBytes == null) return;
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => _generatedPdfBytes!,
+      name: 'Invoice_${widget.bill.id}',
+    );
+  }
+
   Future<Uint8List> _generateInvoicePdf(Bill bill) async {
     final pdf = pw.Document(
       title: 'Arun Crackers Invoice ${bill.id}',
@@ -556,7 +402,6 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.stretch,
               children: [
-                // Store Info
                 pw.Center(
                   child: pw.Column(
                     children: [
@@ -586,8 +431,6 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                 pw.SizedBox(height: 16),
                 pw.Divider(color: PdfColors.red800, thickness: 1.5),
                 pw.SizedBox(height: 8),
-
-                // Invoice metadata
                 pw.Row(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
@@ -616,26 +459,21 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                   ],
                 ),
                 pw.SizedBox(height: 16),
-                
-                // Table of items
                 pw.Table(
                   border: const pw.TableBorder(
                     horizontalInside: pw.BorderSide(color: PdfColors.grey300, width: 0.5),
                     bottom: pw.BorderSide(color: PdfColors.red800, width: 1.5),
                   ),
                   columnWidths: {
-                    0: const pw.FractionColumnWidth(0.08),  // S.No
-                    1: const pw.FractionColumnWidth(0.50),  // Item Name
-                    2: const pw.FractionColumnWidth(0.16),  // Price
-                    3: const pw.FractionColumnWidth(0.12),  // Quantity
-                    4: const pw.FractionColumnWidth(0.14),  // Total
+                    0: const pw.FractionColumnWidth(0.08),
+                    1: const pw.FractionColumnWidth(0.50),
+                    2: const pw.FractionColumnWidth(0.16),
+                    3: const pw.FractionColumnWidth(0.12),
+                    4: const pw.FractionColumnWidth(0.14),
                   },
                   children: [
-                    // Headers
                     pw.TableRow(
-                      decoration: const pw.BoxDecoration(
-                        color: PdfColors.red50,
-                      ),
+                      decoration: const pw.BoxDecoration(color: PdfColors.red50),
                       children: [
                         _pdfTableHeader('S.No', align: pw.TextAlign.center),
                         _pdfTableHeader('Item Name', align: pw.TextAlign.left),
@@ -644,7 +482,6 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                         _pdfTableHeader('Total', align: pw.TextAlign.right),
                       ],
                     ),
-                    // Rows
                     ...List.generate(bill.items.length, (index) {
                       final item = bill.items[index];
                       return pw.TableRow(
@@ -660,46 +497,27 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                   ],
                 ),
                 pw.SizedBox(height: 10),
-
-                // Table Total row
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Text(
-                      'Total',
-                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10, color: PdfColors.grey700),
-                    ),
-                    pw.Text(
-                      'INR ${formatRupees(bill.grandTotalPaise)}',
-                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10),
-                    ),
+                    pw.Text('Total', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10, color: PdfColors.grey700)),
+                    pw.Text('INR ${formatRupees(bill.grandTotalPaise)}', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
                   ],
                 ),
                 pw.SizedBox(height: 8),
                 pw.Divider(color: PdfColors.red800, thickness: 1.5),
                 pw.SizedBox(height: 6),
-
-                // Grand Total Amount
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Text(
-                      'Total Amount:',
-                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13),
-                    ),
+                    pw.Text('Total Amount:', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 13)),
                     pw.Text(
                       'INR ${formatRupees(bill.grandTotalPaise)}',
-                      style: pw.TextStyle(
-                        fontWeight: pw.FontWeight.bold,
-                        fontSize: 14,
-                        color: PdfColors.red900,
-                      ),
+                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 14, color: PdfColors.red900),
                     ),
                   ],
                 ),
                 pw.Spacer(),
-
-                // Footer section in PDF
                 pw.Container(
                   decoration: pw.BoxDecoration(
                     border: pw.Border.all(color: PdfColors.red200, width: 1),
@@ -711,11 +529,7 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
                     children: [
                       pw.Text(
                         'Thank you for your business! We wish you a safe and sparky celebration!',
-                        style: pw.TextStyle(
-                          fontSize: 10,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.red900,
-                        ),
+                        style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.red900),
                         textAlign: pw.TextAlign.center,
                       ),
                       pw.SizedBox(height: 4),
@@ -741,14 +555,8 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
     return pw.RichText(
       text: pw.TextSpan(
         children: [
-          pw.TextSpan(
-            text: '$label ',
-            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10, color: PdfColors.red900),
-          ),
-          pw.TextSpan(
-            text: value,
-            style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey900),
-          ),
+          pw.TextSpan(text: '$label ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10, color: PdfColors.red900)),
+          pw.TextSpan(text: value, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey900)),
         ],
       ),
     );
@@ -757,26 +565,14 @@ class _InvoiceDialogState extends State<InvoiceDialog> {
   pw.Widget _pdfTableHeader(String text, {pw.TextAlign align = pw.TextAlign.left}) {
     return pw.Padding(
       padding: const pw.EdgeInsets.all(6),
-      child: pw.Text(
-        text,
-        style: pw.TextStyle(
-          fontSize: 10,
-          fontWeight: pw.FontWeight.bold,
-          color: PdfColors.red900,
-        ),
-        textAlign: align,
-      ),
+      child: pw.Text(text, style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.red900), textAlign: align),
     );
   }
 
   pw.Widget _pdfTableCell(String text, {pw.TextAlign align = pw.TextAlign.left}) {
     return pw.Padding(
       padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-      child: pw.Text(
-        text,
-        style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey900),
-        textAlign: align,
-      ),
+      child: pw.Text(text, style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey900), textAlign: align),
     );
   }
 }

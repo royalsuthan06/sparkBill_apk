@@ -6,6 +6,7 @@ import '../providers/pos_provider.dart';
 import '../models/bill.dart';
 import '../utils/money.dart';
 import '../widgets/invoice_dialog.dart';
+import '../screens/backup_settings_screen.dart';
 
 class ReportsView extends StatefulWidget {
   const ReportsView({super.key});
@@ -32,13 +33,13 @@ class _ReportsViewState extends State<ReportsView> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFFB90538), // primary rose
+              primary: Color(0xFFF43F5E), // primary rose
               onPrimary: Colors.white,
               onSurface: Color(0xFF0F172A),
             ),
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFFB90538),
+                foregroundColor: const Color(0xFFF43F5E),
               ),
             ),
           ),
@@ -59,6 +60,9 @@ class _ReportsViewState extends State<ReportsView> {
   Widget build(BuildContext context) {
     final posProvider = context.watch<POSProvider>();
     final timeFormat = DateFormat('HH:mm');
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final useWideLayout = screenWidth > 900;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Filter bills based on date selection
     final now = DateTime.now();
@@ -87,7 +91,7 @@ class _ReportsViewState extends State<ReportsView> {
     final int totalBillsCount = filteredBills.length;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F4F6), // surface-container-low
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           'Arun Crackers',
@@ -95,14 +99,28 @@ class _ReportsViewState extends State<ReportsView> {
             fontWeight: FontWeight.w700,
             fontSize: 18,
             letterSpacing: -0.5,
-            color: const Color(0xFFB90538), // primary rose
+            color: const Color(0xFFF43F5E), // primary rose
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings, color: Color(0xFFF43F5E)),
+            tooltip: 'Backup & Restore Settings',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const BackupSettingsScreen(),
+                ),
+              );
+            },
+          ),
+        ],
         elevation: 0,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(color: const Color(0xFFE2E8F0), height: 1),
+          child: Container(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0), height: 1),
         ),
       ),
       body: Column(
@@ -112,74 +130,24 @@ class _ReportsViewState extends State<ReportsView> {
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                // Total Sales Bento Card
                 Expanded(
-                  child: Container(
-                    height: 96,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Total Sales',
-                          style: GoogleFonts.workSans(
-                            fontSize: 12,
-                            color: const Color(0xFF64748B),
-                          ),
-                        ),
-                        Text(
-                          formatMoney(totalSalesSum, decimals: 0),
-                          style: GoogleFonts.jetBrainsMono(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF0F172A),
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  child: _buildSummaryCard('Total Sales', formatMoney(totalSalesSum, decimals: 0)),
                 ),
                 const SizedBox(width: 8),
-                // Total Bills Bento Card
                 Expanded(
-                  child: Container(
-                    height: 96,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Total Bills',
-                          style: GoogleFonts.workSans(
-                            fontSize: 12,
-                            color: const Color(0xFF64748B),
-                          ),
-                        ),
-                        Text(
-                          totalBillsCount.toString(),
-                          style: GoogleFonts.jetBrainsMono(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF0F172A),
-                          ),
-                        ),
-                      ],
+                  child: _buildSummaryCard('Total Bills', totalBillsCount.toString()),
+                ),
+                if (useWideLayout) ...[
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildSummaryCard(
+                      'Avg. Bill',
+                      totalBillsCount > 0
+                          ? formatMoney(totalSalesSum ~/ totalBillsCount, decimals: 0)
+                          : '0',
                     ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -217,10 +185,10 @@ class _ReportsViewState extends State<ReportsView> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: isActive ? const Color(0xFFB90538) : Colors.white,
+                      color: isActive ? const Color(0xFFF43F5E) : (isDark ? const Color(0xFF1E293B) : Colors.white),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: isActive ? const Color(0xFFB90538) : const Color(0xFFCBD5E1),
+                        color: isActive ? const Color(0xFFF43F5E) : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
                       ),
                     ),
                     child: Text(
@@ -229,7 +197,7 @@ class _ReportsViewState extends State<ReportsView> {
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.2,
-                        color: isActive ? Colors.white : const Color(0xFF64748B),
+                        color: isActive ? Colors.white : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
                       ),
                     ),
                   ),
@@ -251,7 +219,7 @@ class _ReportsViewState extends State<ReportsView> {
                         Text(
                           'No receipts logged for ${(_activeFilter == 'Custom' && _selectedDateRange != null) ? 'Custom (${DateFormat('d MMM').format(_selectedDateRange!.start)} - ${DateFormat('d MMM').format(_selectedDateRange!.end)})' : _activeFilter}.',
                           style: GoogleFonts.workSans(
-                            color: const Color(0xFF64748B),
+                            color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                             fontSize: 13,
                           ),
                         ),
@@ -267,9 +235,9 @@ class _ReportsViewState extends State<ReportsView> {
                       return Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.surface,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                          border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -283,7 +251,7 @@ class _ReportsViewState extends State<ReportsView> {
                                   style: GoogleFonts.jetBrainsMono(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF0F172A),
+                                    color: Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
                                 const SizedBox(height: 2),
@@ -291,7 +259,7 @@ class _ReportsViewState extends State<ReportsView> {
                                   '${timeFormat.format(bill.dateTime)} • ${bill.totalItemCount} Items',
                                   style: GoogleFonts.workSans(
                                     fontSize: 12,
-                                    color: const Color(0xFF64748B),
+                                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                                   ),
                                 ),
                               ],
@@ -305,13 +273,13 @@ class _ReportsViewState extends State<ReportsView> {
                                   style: GoogleFonts.jetBrainsMono(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF0F172A),
+                                    color: Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
                                 const SizedBox(width: 12),
                                 // Export PDF Action
                                 IconButton(
-                                  icon: const Icon(Icons.picture_as_pdf, color: Color(0xFFB90538), size: 18),
+                                  icon: const Icon(Icons.picture_as_pdf, color: Color(0xFFF43F5E), size: 18),
                                   onPressed: () {
                                     // Trigger Print view (reprint)
                                     showDialog(
@@ -346,7 +314,29 @@ class _ReportsViewState extends State<ReportsView> {
     );
   }
 
+  Widget _buildSummaryCard(String label, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      height: 96,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: GoogleFonts.workSans(fontSize: 12, color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
+          Text(value, style: GoogleFonts.jetBrainsMono(fontSize: 20, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface, letterSpacing: -0.5)),
+        ],
+      ),
+    );
+  }
+
   void _confirmDelete(BuildContext context, Bill bill) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) {
@@ -359,7 +349,7 @@ class _ReportsViewState extends State<ReportsView> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text('CANCEL', style: GoogleFonts.workSans(color: const Color(0xFF64748B))),
+              child: Text('CANCEL', style: GoogleFonts.workSans(color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B))),
             ),
             TextButton(
               onPressed: () {

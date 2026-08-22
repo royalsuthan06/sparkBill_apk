@@ -5,6 +5,7 @@ import '../providers/pos_provider.dart';
 import '../models/product.dart';
 import '../utils/money.dart';
 import '../widgets/add_product_sheet.dart';
+import '../screens/backup_settings_screen.dart';
 
 class InventoryView extends StatefulWidget {
   const InventoryView({super.key});
@@ -69,6 +70,9 @@ class _InventoryViewState extends State<InventoryView> {
   @override
   Widget build(BuildContext context) {
     final posProvider = context.watch<POSProvider>();
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final useGrid = screenWidth > 900;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Filter products based on search query, selected category & price range
     final filteredProducts = posProvider.products.where((p) {
@@ -88,6 +92,49 @@ class _InventoryViewState extends State<InventoryView> {
       return matchesSearch && matchesCategory && matchesPrice;
     }).toList();
 
+    if (_searchQuery.isNotEmpty) {
+      final q = _searchQuery.toLowerCase();
+      filteredProducts.sort((a, b) {
+        final aSku = a.sku.toLowerCase();
+        final bSku = b.sku.toLowerCase();
+        final aName = a.name.toLowerCase();
+        final bName = b.name.toLowerCase();
+
+        int compareSkus(String a, String b) {
+          final numA = int.tryParse(a);
+          final numB = int.tryParse(b);
+          if (numA != null && numB != null) {
+            return numA.compareTo(numB);
+          }
+          return a.compareTo(b);
+        }
+
+        if (aSku == q && bSku != q) return -1;
+        if (bSku == q && aSku != q) return 1;
+        if (aSku == q && bSku == q) return compareSkus(aSku, bSku);
+
+        final aStarts = aSku.startsWith(q);
+        final bStarts = bSku.startsWith(q);
+        if (aStarts && !bStarts) return -1;
+        if (bStarts && !aStarts) return 1;
+        if (aStarts && bStarts) return compareSkus(aSku, bSku);
+
+        final aContains = aSku.contains(q);
+        final bContains = bSku.contains(q);
+        if (aContains && !bContains) return -1;
+        if (bContains && !aContains) return 1;
+        if (aContains && bContains) return compareSkus(aSku, bSku);
+
+        final aNameStarts = aName.startsWith(q);
+        final bNameStarts = bName.startsWith(q);
+        if (aNameStarts && !bNameStarts) return -1;
+        if (bNameStarts && !aNameStarts) return 1;
+        if (aNameStarts && bNameStarts) return compareSkus(aSku, bSku);
+
+        return compareSkus(aSku, bSku);
+      });
+    }
+
     if (_priceSort == 'low_to_high') {
       filteredProducts.sort((a, b) => a.pricePaise.compareTo(b.pricePaise));
     } else if (_priceSort == 'high_to_low') {
@@ -95,7 +142,7 @@ class _InventoryViewState extends State<InventoryView> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F4F6), // surface-container-low
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           'Arun Crackers',
@@ -103,21 +150,35 @@ class _InventoryViewState extends State<InventoryView> {
             fontWeight: FontWeight.w700,
             fontSize: 18,
             letterSpacing: -0.5,
-            color: const Color(0xFFB90538), // primary rose
+            color: const Color(0xFFF43F5E), // primary rose
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings, color: Color(0xFFF43F5E)),
+            tooltip: 'Backup & Restore Settings',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const BackupSettingsScreen(),
+                ),
+              );
+            },
+          ),
+        ],
         elevation: 0,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(color: const Color(0xFFE2E8F0), height: 1),
+          child: Container(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0), height: 1),
         ),
       ),
       body: Column(
         children: [
           // Search & Filter Panel
           Container(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             child: Column(
               children: [
@@ -129,20 +190,22 @@ class _InventoryViewState extends State<InventoryView> {
                         height: 40,
                         child: TextField(
                           controller: _searchController,
+                          maxLength: 20,
                           style: GoogleFonts.workSans(fontSize: 13),
                           decoration: InputDecoration(
                             hintText: 'Search SKU or Name...',
+                            counterText: '',
                             prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF64748B)),
                             contentPadding: const EdgeInsets.symmetric(vertical: 8),
                             filled: true,
-                            fillColor: const Color(0xFFF8FAFC),
+                            fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                              borderSide: BorderSide(color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
-                              borderSide: const BorderSide(color: Color(0xFFB90538), width: 1.2),
+                              borderSide: const BorderSide(color: Color(0xFFF43F5E), width: 1.2),
                             ),
                           ),
                         ),
@@ -165,7 +228,7 @@ class _InventoryViewState extends State<InventoryView> {
                         height: 40,
                         width: 40,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFB90538),
+                          color: const Color(0xFFF43F5E),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(Icons.add, color: Colors.white, size: 20),
@@ -198,10 +261,10 @@ class _InventoryViewState extends State<InventoryView> {
                                 alignment: Alignment.center,
                                 padding: const EdgeInsets.symmetric(horizontal: 12),
                                 decoration: BoxDecoration(
-                                  color: isSelected ? const Color(0xFFDC2C4F) : const Color(0xFFF8FAFC),
+                                  color: isSelected ? const Color(0xFFDC2C4F) : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC)),
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
-                                    color: isSelected ? const Color(0xFFB90538) : const Color(0xFFCBD5E1),
+                                    color: isSelected ? const Color(0xFFF43F5E) : (isDark ? const Color(0xFF334155) : const Color(0xFFCBD5E1)),
                                   ),
                                 ),
                                 child: Text(
@@ -209,7 +272,7 @@ class _InventoryViewState extends State<InventoryView> {
                                   style: GoogleFonts.workSans(
                                     fontSize: 11,
                                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                                    color: isSelected ? Colors.white : const Color(0xFF64748B),
+                                    color: isSelected ? Colors.white : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
                                   ),
                                 ),
                               ),
@@ -296,12 +359,12 @@ class _InventoryViewState extends State<InventoryView> {
                         width: 32,
                         decoration: BoxDecoration(
                           color: (_priceSort != 'none' || _priceFilterRange != 'all') 
-                              ? const Color(0xFFB90538) 
+                              ? const Color(0xFFF43F5E) 
                               : const Color(0xFFF8FAFC),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
                             color: (_priceSort != 'none' || _priceFilterRange != 'all') 
-                                ? const Color(0xFFB90538) 
+                                ? const Color(0xFFF43F5E) 
                                 : const Color(0xFFCBD5E1),
                           ),
                         ),
@@ -336,13 +399,27 @@ class _InventoryViewState extends State<InventoryView> {
                       ],
                     ),
                   )
-                : ListView.builder(
-                    itemCount: filteredProducts.length,
-                    itemBuilder: (context, index) {
-                      final product = filteredProducts[index];
-                      return _buildProductCard(context, product);
-                    },
-                  ),
+                : useGrid
+                    ? GridView.builder(
+                        padding: const EdgeInsets.all(12),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          childAspectRatio: 3.2,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                        ),
+                        itemCount: filteredProducts.length,
+                        itemBuilder: (context, index) {
+                          return _buildProductCard(context, filteredProducts[index]);
+                        },
+                      )
+                    : ListView.builder(
+                        itemCount: filteredProducts.length,
+                        itemBuilder: (context, index) {
+                          final product = filteredProducts[index];
+                          return _buildProductCard(context, product);
+                        },
+                      ),
           ),
         ],
       ),
@@ -350,10 +427,11 @@ class _InventoryViewState extends State<InventoryView> {
   }
 
   Widget _buildProductCard(BuildContext context, Product product) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(bottom: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0))),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -380,14 +458,14 @@ class _InventoryViewState extends State<InventoryView> {
                   style: GoogleFonts.workSans(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF0F172A),
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 Text(
                   product.category,
                   style: GoogleFonts.workSans(
                     fontSize: 12,
-                    color: const Color(0xFF515F74),
+                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF515F74),
                   ),
                 ),
               ],
@@ -401,7 +479,7 @@ class _InventoryViewState extends State<InventoryView> {
                 style: GoogleFonts.jetBrainsMono(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF0F172A),
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
               const SizedBox(width: 8),

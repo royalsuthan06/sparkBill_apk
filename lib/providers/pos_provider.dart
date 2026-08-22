@@ -10,6 +10,11 @@ class POSProvider extends ChangeNotifier {
   static const String _kProductsKey = 'sparkbill_products';
   static const String _kBillsKey = 'sparkbill_bills';
   static const String _kBillCounterKey = 'sparkbill_bill_counter';
+  static const String _kDarkModeKey = 'sparkbill_dark_mode';
+
+  // Theme settings
+  bool _isDarkMode = false;
+  bool get isDarkMode => _isDarkMode;
 
   // Inventory Lists
   final List<Product> _products = [];
@@ -38,16 +43,50 @@ class POSProvider extends ChangeNotifier {
   int get discount => 0;
   int get grandTotal => subtotal;
 
+  int _compareSkus(String a, String b) {
+    final numA = int.tryParse(a);
+    final numB = int.tryParse(b);
+    
+    if (numA != null && numB != null) {
+      return numA.compareTo(numB);
+    }
+    
+    final regExp = RegExp(r'^(\d+)(.*)$');
+    final matchA = regExp.firstMatch(a);
+    final matchB = regExp.firstMatch(b);
+    
+    if (matchA != null && matchB != null) {
+      final intPartA = int.tryParse(matchA.group(1)!);
+      final intPartB = int.tryParse(matchB.group(1)!);
+      
+      if (intPartA != null && intPartB != null) {
+        if (intPartA != intPartB) {
+          return intPartA.compareTo(intPartB);
+        }
+        return matchA.group(2)!.compareTo(matchB.group(2)!);
+      }
+    }
+    
+    return a.compareTo(b);
+  }
+
+  void _sortProductsBySku() {
+    _products.sort((a, b) => _compareSkus(a.sku, b.sku));
+  }
+
   /// Loads persisted products/bills and seeds initial data on first run.
   Future<void> initialize() async {
     try {
       _prefs = await SharedPreferences.getInstance();
+      _isDarkMode = _prefs?.getBool(_kDarkModeKey) ?? false;
 
       final productsJson = _prefs?.getString(_kProductsKey);
       if (productsJson != null && productsJson.isNotEmpty) {
         _products.addAll(_decodeProducts(productsJson));
+        _sortProductsBySku();
       } else {
         _loadInitialProducts();
+        _sortProductsBySku();
         _persistProducts();
       }
 
@@ -292,6 +331,7 @@ class POSProvider extends ChangeNotifier {
     } else {
       _products.add(product);
     }
+    _sortProductsBySku();
     _persistProducts();
     notifyListeners();
   }
@@ -299,6 +339,73 @@ class POSProvider extends ChangeNotifier {
   void removeProduct(String sku) {
     _products.removeWhere((p) => p.sku == sku);
     _persistProducts();
+    notifyListeners();
+  }
+
+  /// Merges products, bills and updates the bill counter from the imported backup.
+  void importBackupData(Map<String, dynamic> data) {
+    try {
+      // 1. Merge products
+      final dynamic productsData = data['products'];
+      if (productsData is List) {
+        for (final item in productsData) {
+          if (item is Map) {
+            final product = Product.fromJson(Map<String, dynamic>.from(item));
+            final idx = _products.indexWhere((p) => p.sku.toUpperCase() == product.sku.toUpperCase());
+            if (idx != -1) {
+              _products[idx] = product;
+            } else {
+              _products.add(product);
+            }
+          }
+        }
+        _sortProductsBySku();
+        _persistProducts();
+      }
+
+      // 2. Merge bills
+      final dynamic billsData = data['bills'];
+      if (billsData is List) {
+        for (final item in billsData) {
+          if (item is Map) {
+            final bill = Bill.fromJson(Map<String, dynamic>.from(item));
+            final idx = _bills.indexWhere((b) => b.id == bill.id);
+            if (idx != -1) {
+              _bills[idx] = bill;
+            } else {
+              _bills.add(bill);
+            }
+          }
+        }
+        // Keep bills sorted by date descending (newest first)
+        _bills.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+        _persistBills();
+      }
+
+      // 3. Update bill counter
+      final dynamic importedCounter = data['bill_counter'];
+      if (importedCounter is int) {
+        if (importedCounter > _billCounter) {
+          _billCounter = importedCounter;
+          _persistBillCounter();
+        }
+      } else {
+        final calculatedCounter = _fallbackBillCounter();
+        if (calculatedCounter > _billCounter) {
+          _billCounter = calculatedCounter;
+          _persistBillCounter();
+        }
+      }
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error importing backup data: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> setDarkMode(bool value) async {
+    _isDarkMode = value;
+    await _prefs?.setBool(_kDarkModeKey, value);
     notifyListeners();
   }
 }

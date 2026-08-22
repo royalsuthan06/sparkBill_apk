@@ -19,6 +19,8 @@ class _BillingViewState extends State<BillingView> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  final FocusNode _phoneFocusNode = FocusNode();
+  final FocusNode _nameFocusNode = FocusNode();
 
   Product? _selectedProduct;
   int _quantitySelected = 1;
@@ -42,6 +44,8 @@ class _BillingViewState extends State<BillingView> {
     _nameController.dispose();
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _phoneFocusNode.dispose();
+    _nameFocusNode.dispose();
     super.dispose();
   }
 
@@ -63,12 +67,73 @@ class _BillingViewState extends State<BillingView> {
       return;
     }
 
+    String cleanSku(String s) {
+      final parsed = int.tryParse(s);
+      if (parsed != null) {
+        return parsed.toString();
+      }
+      return s;
+    }
+
     final provider = context.read<POSProvider>();
     final matches = provider.products.where((product) {
       final nameMatch = product.name.toLowerCase().contains(query.toLowerCase());
-      final skuMatch = product.sku.toLowerCase().contains(query.toLowerCase());
+      
+      final cleanQ = cleanSku(query.toLowerCase());
+      final cleanS = cleanSku(product.sku.toLowerCase());
+      final skuMatch = cleanS.contains(cleanQ) || product.sku.toLowerCase().contains(query.toLowerCase());
+      
       return nameMatch || skuMatch;
     }).toList();
+
+    matches.sort((a, b) {
+      final q = query.toLowerCase();
+      final aSku = a.sku.toLowerCase();
+      final bSku = b.sku.toLowerCase();
+      final aName = a.name.toLowerCase();
+      final bName = b.name.toLowerCase();
+
+      int compareSkus(String a, String b) {
+        final numA = int.tryParse(a);
+        final numB = int.tryParse(b);
+        if (numA != null && numB != null) {
+          return numA.compareTo(numB);
+        }
+        return a.compareTo(b);
+      }
+
+      final cleanQ = cleanSku(q);
+      final cleanASku = cleanSku(aSku);
+      final cleanBSku = cleanSku(bSku);
+
+      // SKU exact match first
+      if (cleanASku == cleanQ && cleanBSku != cleanQ) return -1;
+      if (cleanBSku == cleanQ && cleanASku != cleanQ) return 1;
+      if (cleanASku == cleanQ && cleanBSku == cleanQ) return compareSkus(aSku, bSku);
+
+      // SKU starts-with match
+      final aStarts = cleanASku.startsWith(cleanQ);
+      final bStarts = cleanBSku.startsWith(cleanQ);
+      if (aStarts && !bStarts) return -1;
+      if (bStarts && !aStarts) return 1;
+      if (aStarts && bStarts) return compareSkus(aSku, bSku);
+
+      // SKU contains match
+      final aContains = cleanASku.contains(cleanQ);
+      final bContains = cleanBSku.contains(cleanQ);
+      if (aContains && !bContains) return -1;
+      if (bContains && !aContains) return 1;
+      if (aContains && bContains) return compareSkus(aSku, bSku);
+
+      // Name starts-with
+      final aNameStarts = aName.startsWith(q);
+      final bNameStarts = bName.startsWith(q);
+      if (aNameStarts && !bNameStarts) return -1;
+      if (bNameStarts && !aNameStarts) return 1;
+      if (aNameStarts && bNameStarts) return compareSkus(aSku, bSku);
+
+      return compareSkus(aSku, bSku);
+    });
 
     setState(() {
       _searchResults = matches;
@@ -126,9 +191,12 @@ class _BillingViewState extends State<BillingView> {
   @override
   Widget build(BuildContext context) {
     final posProvider = context.watch<POSProvider>();
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final isWide = screenWidth > 600;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F4F6), // surface-container-low
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           'Arun Crackers',
@@ -136,14 +204,14 @@ class _BillingViewState extends State<BillingView> {
             fontWeight: FontWeight.w700,
             fontSize: 22,
             letterSpacing: -0.5,
-            color: const Color(0xFFB90538), // primary rose
+            color: const Color(0xFFF43F5E), // primary rose
           ),
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
         elevation: 0,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(color: const Color(0xFFE2E8F0), height: 1),
+          child: Container(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0), height: 1),
         ),
       ),
       body: Stack(
@@ -152,7 +220,7 @@ class _BillingViewState extends State<BillingView> {
             children: [
               // Customer Section (Compact)
               Container(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 child: Row(
                   children: [
@@ -163,21 +231,26 @@ class _BillingViewState extends State<BillingView> {
                         height: 44,
                         child: TextField(
                           controller: _phoneController,
+                          focusNode: _phoneFocusNode,
+                          textInputAction: TextInputAction.next,
+                          onSubmitted: (_) => FocusScope.of(context).requestFocus(_nameFocusNode),
                           keyboardType: TextInputType.phone,
-                          style: GoogleFonts.jetBrainsMono(fontSize: 13, color: const Color(0xFF0F172A)),
+                          maxLength: 10,
+                          style: GoogleFonts.jetBrainsMono(fontSize: 13, color: Theme.of(context).colorScheme.onSurface),
                           decoration: InputDecoration(
                             hintText: 'Mobile No.',
+                            counterText: '',
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(4),
-                              borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                              borderSide: BorderSide(color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
                             ),
                             focusedBorder: const OutlineInputBorder(
                               borderRadius: BorderRadius.only(
                                 topLeft: Radius.circular(4),
                                 bottomLeft: Radius.circular(4),
                               ),
-                              borderSide: BorderSide(color: Color(0xFFB90538), width: 1.5),
+                              borderSide: BorderSide(color: Color(0xFFF43F5E), width: 1.5),
                             ),
                           ),
                         ),
@@ -191,21 +264,26 @@ class _BillingViewState extends State<BillingView> {
                         height: 44,
                         child: TextField(
                           controller: _nameController,
+                          focusNode: _nameFocusNode,
+                          textInputAction: TextInputAction.next,
+                          onSubmitted: (_) => FocusScope.of(context).requestFocus(_searchFocusNode),
                           keyboardType: TextInputType.name,
-                          style: GoogleFonts.workSans(fontSize: 13, color: const Color(0xFF0F172A)),
+                          maxLength: 30,
+                          style: GoogleFonts.workSans(fontSize: 13, color: Theme.of(context).colorScheme.onSurface),
                           decoration: InputDecoration(
                             hintText: 'Customer Name',
+                            counterText: '',
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(4),
-                              borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                              borderSide: BorderSide(color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
                             ),
                             focusedBorder: const OutlineInputBorder(
                               borderRadius: BorderRadius.only(
                                 topRight: Radius.circular(4),
                                 bottomRight: Radius.circular(4),
                               ),
-                              borderSide: BorderSide(color: Color(0xFFB90538), width: 1.5),
+                              borderSide: BorderSide(color: Color(0xFFF43F5E), width: 1.5),
                             ),
                           ),
                         ),
@@ -217,14 +295,14 @@ class _BillingViewState extends State<BillingView> {
 
               // SKU Entry Panel
               Container(
-                color: const Color(0xFFF2F4F6),
+                color: Theme.of(context).scaffoldBackgroundColor,
                 padding: const EdgeInsets.all(12),
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                   ),
                   child: Column(
                     children: [
@@ -234,17 +312,20 @@ class _BillingViewState extends State<BillingView> {
                         child: TextField(
                           controller: _searchController,
                           focusNode: _searchFocusNode,
-                          style: GoogleFonts.jetBrainsMono(fontSize: 13, color: const Color(0xFF0F172A)),
+                          textInputAction: TextInputAction.done,
+                          maxLength: 20,
+                          style: GoogleFonts.jetBrainsMono(fontSize: 13, color: Theme.of(context).colorScheme.onSurface),
                           decoration: InputDecoration(
                             hintText: 'Search SKU or Item name...',
+                            counterText: '',
                             prefixIcon: const Icon(Icons.search, size: 18),
                             contentPadding: const EdgeInsets.symmetric(vertical: 8),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(4),
-                              borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                              borderSide: BorderSide(color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
                             ),
                             focusedBorder: const OutlineInputBorder(
-                              borderSide: BorderSide(color: Color(0xFFB90538), width: 1.5),
+                              borderSide: BorderSide(color: Color(0xFFF43F5E), width: 1.5),
                             ),
                           ),
                         ),
@@ -272,7 +353,7 @@ class _BillingViewState extends State<BillingView> {
                               child: ElevatedButton(
                                 onPressed: _addItemToCart,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFB90538),
+                                  backgroundColor: const Color(0xFFF43F5E),
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(4),
@@ -299,10 +380,10 @@ class _BillingViewState extends State<BillingView> {
 
               // Billed List Headers
               Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
                   border: Border(
-                    bottom: BorderSide(color: Color(0xFFE2E8F0)),
+                    bottom: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                   ),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -374,7 +455,7 @@ class _BillingViewState extends State<BillingView> {
               // Billed Items High-Density List
               Expanded(
                 child: Container(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.surface,
                   child: posProvider.cart.isEmpty
                       ? Center(
                           child: Column(
@@ -432,7 +513,7 @@ class _BillingViewState extends State<BillingView> {
                                       style: GoogleFonts.workSans(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w500,
-                                        color: const Color(0xFF0F172A),
+                                        color: Theme.of(context).colorScheme.onSurface,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -445,7 +526,7 @@ class _BillingViewState extends State<BillingView> {
                                       formatRupees(item.pricePaise),
                                       style: GoogleFonts.jetBrainsMono(
                                         fontSize: 12,
-                                        color: const Color(0xFF0F172A),
+                                        color: Theme.of(context).colorScheme.onSurface,
                                       ),
                                       textAlign: TextAlign.right,
                                     ),
@@ -457,7 +538,7 @@ class _BillingViewState extends State<BillingView> {
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFE0E3E5),
+                                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE0E3E5),
                                           borderRadius: BorderRadius.circular(4),
                                         ),
                                         child: Text(
@@ -465,7 +546,7 @@ class _BillingViewState extends State<BillingView> {
                                           style: GoogleFonts.jetBrainsMono(
                                             fontSize: 12,
                                             fontWeight: FontWeight.bold,
-                                            color: const Color(0xFF0F172A),
+                                            color: Theme.of(context).colorScheme.onSurface,
                                           ),
                                         ),
                                       ),
@@ -479,7 +560,7 @@ class _BillingViewState extends State<BillingView> {
                                       style: GoogleFonts.jetBrainsMono(
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF0F172A),
+                                        color: Theme.of(context).colorScheme.onSurface,
                                       ),
                                       textAlign: TextAlign.right,
                                     ),
@@ -501,13 +582,13 @@ class _BillingViewState extends State<BillingView> {
                                                 'Remove Item',
                                                 style: GoogleFonts.workSans(
                                                   fontWeight: FontWeight.bold,
-                                                  color: const Color(0xFF0F172A),
+                                                  color: Theme.of(context).colorScheme.onSurface,
                                                 ),
                                               ),
                                               content: Text(
                                                 'Are you sure you want to remove "${item.product.name}" from the cart?',
                                                 style: GoogleFonts.workSans(
-                                                  color: const Color(0xFF475569),
+                                                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
                                                 ),
                                               ),
                                               actions: [
@@ -560,10 +641,10 @@ class _BillingViewState extends State<BillingView> {
 
               // Bottom Calculations + Checkout Buttons
               Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
                   border: Border(
-                    top: BorderSide(color: Color(0xFFE2E8F0), width: 1),
+                    top: BorderSide(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0), width: 1),
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -579,7 +660,7 @@ class _BillingViewState extends State<BillingView> {
                     // Subtotal Line
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      color: const Color(0xFFFFFFFF),
+                      color: Theme.of(context).colorScheme.surface,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -594,17 +675,17 @@ class _BillingViewState extends State<BillingView> {
                             formatRupees(posProvider.subtotal),
                             style: GoogleFonts.jetBrainsMono(
                               fontSize: 13,
-                              color: const Color(0xFF0F172A),
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                    Divider(height: 1, color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                     // Grand Total Accordion Action Card
                     Container(
                       padding: const EdgeInsets.all(12),
-                      color: const Color(0xFFF8FAFC),
+                      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -628,7 +709,7 @@ class _BillingViewState extends State<BillingView> {
                                   style: GoogleFonts.jetBrainsMono(
                                     fontSize: 20,
                                     fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF0F172A),
+                                    color: Theme.of(context).colorScheme.onSurface,
                                   ),
                                 ),
                               ],
@@ -650,13 +731,13 @@ class _BillingViewState extends State<BillingView> {
                                              'Clear Cart',
                                              style: GoogleFonts.workSans(
                                                fontWeight: FontWeight.bold,
-                                               color: const Color(0xFF0F172A),
+                                               color: Theme.of(context).colorScheme.onSurface,
                                              ),
                                            ),
                                            content: Text(
                                              'Are you sure you want to clear all items in the cart?',
                                              style: GoogleFonts.workSans(
-                                               color: const Color(0xFF475569),
+                                               color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
                                              ),
                                            ),
                                            actions: [
@@ -705,7 +786,7 @@ class _BillingViewState extends State<BillingView> {
                              style: TextButton.styleFrom(
                                foregroundColor: const Color(0xFF64748B),
                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                               side: const BorderSide(color: Color(0xFFCBD5E1)),
+                               side: BorderSide(color: isDark ? const Color(0xFF475569) : const Color(0xFFCBD5E1)),
                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                              ),
                            ),
@@ -735,7 +816,7 @@ class _BillingViewState extends State<BillingView> {
                               style: GoogleFonts.workSans(fontWeight: FontWeight.bold, fontSize: 13),
                             ),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFB90538),
+                              backgroundColor: const Color(0xFFF43F5E),
                               foregroundColor: Colors.white,
                               elevation: 0,
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -754,15 +835,15 @@ class _BillingViewState extends State<BillingView> {
           // Suggestion list overlays for SKU autocomplete search
           if (_showSuggestions && _searchResults.isNotEmpty)
             Positioned(
-              left: 24,
-              right: 24,
-              top: 156, // Positioned right under the search input
+              left: isWide ? 60 : 24,
+              right: isWide ? 60 : 24,
+              top: isWide ? 156 : 156,
               child: Container(
                 constraints: const BoxConstraints(maxHeight: 220),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                   boxShadow: const [
                     BoxShadow(
                       color: Color(0x1F000000),
@@ -773,8 +854,9 @@ class _BillingViewState extends State<BillingView> {
                 ),
                 child: Material(
                   borderRadius: BorderRadius.circular(8),
-                  child: ListView.builder(
-                    padding: EdgeInsets.zero,
+                  color: Theme.of(context).colorScheme.surface,
+                    child: ListView.builder(
+                      padding: EdgeInsets.zero,
                     shrinkWrap: true,
                     itemCount: _searchResults.length,
                     itemBuilder: (context, index) {
@@ -783,7 +865,7 @@ class _BillingViewState extends State<BillingView> {
                         dense: true,
                         title: Text(
                           item.name,
-                          style: GoogleFonts.workSans(fontWeight: FontWeight.bold, color: const Color(0xFF0F172A)),
+                          style: GoogleFonts.workSans(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
                         ),
                         subtitle: Text(
                           '${item.sku} • ${item.category}',
@@ -791,7 +873,7 @@ class _BillingViewState extends State<BillingView> {
                         ),
                         trailing: Text(
                           formatMoney(item.pricePaise),
-                          style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.w600, color: const Color(0xFFB90538)),
+                          style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.w600, color: const Color(0xFFF43F5E)),
                         ),
                         onTap: () => _selectProduct(item),
                       );

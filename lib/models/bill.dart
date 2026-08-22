@@ -25,7 +25,7 @@ class Bill {
 
   factory Bill.fromJson(Map<String, dynamic> json) {
     final items = (json['items'] as List? ?? [])
-        .map((e) => BilledItem.fromJson(e as Map<String, dynamic>))
+        .map((e) => BilledItem.fromJson(Map<String, dynamic>.from(e as Map)))
         .toList();
     return Bill(
       id: json['id']?.toString() ?? '',
